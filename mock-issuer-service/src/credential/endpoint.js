@@ -12,6 +12,11 @@ import { accessTokenStore, stageTestErrorStore } from "../as/authz-store.js";
 import { verifyDPoPProof, buildHtu, DPoPError } from "../as/dpop.js";
 import { hasExplicitVersion, issuerBaseUrl, resolveRequestVersion } from "../issuer-profile.js";
 import { createSdJwt } from "./sd-jwt.js";
+import {
+  SD_JWT_KEY_RESOLUTION,
+  SD_JWT_KEY_RESOLUTION_ISSUER_METADATA,
+  issuerSigningKey,
+} from "./issuer-signing-key.js";
 import { createMdoc } from "./mdoc.js";
 import { signLdpVc } from "./ldp-vc.js";
 import { envTestError, sendTestError } from "../test-errors.js";
@@ -224,7 +229,15 @@ export default async function credentialEndpoint(req, res) {
               }
             }
           }
+          if (SD_JWT_KEY_RESOLUTION === SD_JWT_KEY_RESOLUTION_ISSUER_METADATA) {
+            const issuerKey = await issuerSigningKey();
+            credential = await createSdJwt(
+              {...STATIC_SD_JWT_VC, ...holderCnfInfo}, issuerKey.privateKey, ISSUER, didJwk,
+              { keyId: issuerKey.kid },
+            );
+          } else {
             credential = await createSdJwt({...STATIC_SD_JWT_VC, ...holderCnfInfo}, privateKey, didJwk, didJwk);
+          }
         } else if (format === "mso_mdoc") {
             credential = STATIC_MDL_MDOC_SAMPLE_B64URL;
         }

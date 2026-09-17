@@ -53,7 +53,9 @@ function selfSignedCertB64(privateKey) {
   return pending;
 }
 
-export async function createSdJwt(payload, privateKey, issuer, holderDid) {
+// `keyId` given: the issuer key is published in JWT VC Issuer Metadata, so the header carries
+// only that `kid` - an x5c would take precedence at the verifier and bypass the metadata.
+export async function createSdJwt(payload, privateKey, issuer, holderDid, { keyId } = {}) {
   const disclosures = [];
   const sdHashes = [];
 
@@ -78,10 +80,12 @@ export async function createSdJwt(payload, privateKey, issuer, holderDid) {
   newPayload.keyName = "Simon"
   newPayload.residence = "Bangalore";
 
-  const x5c = [await selfSignedCertB64(privateKey)];
+  const protectedHeader = keyId
+    ? { alg: 'ES256', typ: 'vc+sd-jwt', kid: keyId }
+    : { alg: 'ES256', typ: 'vc+sd-jwt', kid: issuer, x5c: [await selfSignedCertB64(privateKey)] };
 
   const jwt = await new SignJWT(newPayload)
-    .setProtectedHeader({ alg: 'ES256', typ: 'vc+sd-jwt', kid: issuer, x5c })
+    .setProtectedHeader(protectedHeader)
     .setIssuedAt()
     .setIssuer(issuer)
     .setSubject(holderDid)

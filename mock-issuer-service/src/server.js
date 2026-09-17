@@ -17,6 +17,7 @@ import parHandler from "./as/par.js";
 import nonceHandler from "./nonce.js";
 import { getDidDocument } from "./credential/ldp-vc.js";
 import { ISSUER } from "./issuer-profile.js";
+import { jwtVcIssuerMetadata } from "./credential/issuer-signing-key.js";
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
@@ -36,6 +37,7 @@ app.get("/.well-known/did.json", (req, res) => {
   const issuerDid = `did:web:${host.replace(/:/g, '%3A')}`;
   res.json(getDidDocument(issuerDid));
 });
+app.get("/.well-known/jwt-vc-issuer", jwtVcIssuerMetadata);
 app.get("/.well-known/openid-credential-issuer", issuerMetadata);
 app.get("/:flow(pdi)/.well-known/openid-credential-issuer", issuerMetadata);
 app.get("/:version(v1|draft13)/.well-known/openid-credential-issuer", issuerMetadata);
