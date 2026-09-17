@@ -205,6 +205,16 @@ OID4VC Issuer metadata.
 
 ---
 
+### 🔹 JWT VC Issuer Metadata
+
+```
+GET /.well-known/jwt-vc-issuer
+```
+
+The issuer's SD-JWT VC signing key as an inline `jwks`. Used when `SD_JWT_KEY_RESOLUTION=issuer-metadata` - see [SD-JWT issuer key resolution](#-sd-jwt-issuer-key-resolution).
+
+---
+
 ### 🔹 Authorization Server Metadata
 
 ```
@@ -443,6 +453,26 @@ When making changes across both services:
 - [ ] Ensure credential formats match between issuer and verifier
 - [ ] Verify DID methods are compatible
 - [ ] Test the complete flow: offer → present & authorize → verify -> download
+
+---
+
+## 🔑 SD-JWT issuer key resolution
+
+A verifier can find the key for an SD-JWT VC in two ways, and this service can issue either:
+
+| `SD_JWT_KEY_RESOLUTION` | JWT header | `iss` | How a verifier gets the key |
+|---|---|---|---|
+| `x5c` (default) | `kid`, `x5c` | issuer `did:jwk` | from the embedded self-signed certificate |
+| `issuer-metadata` | `kid` only | `ISSUER_URL` | from `GET {iss}/.well-known/jwt-vc-issuer`, selecting the key by `kid` ([SD-JWT VC, section 5](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-sd-jwt-vc)) |
+
+`issuer-metadata` leaves `x5c` out on purpose: a verifier that finds an `x5c` uses it, and never reaches the metadata.
+
+```bash
+ISSUER_URL=https://<your-tunnel> SD_JWT_KEY_RESOLUTION=issuer-metadata USE_HTTPS=false npm run start:issuer-only
+```
+
+- `ISSUER_URL` must be the public HTTPS URL the verifier can reach, and is published unchanged as the metadata's `issuer`, which verifiers require to match `iss` exactly.
+- The signing key lives in memory, so restarting the service invalidates SD-JWTs issued before the restart.
 
 ---
 
