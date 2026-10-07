@@ -12,6 +12,18 @@ import { API_ENDPOINTS, DEFAULT_HEADERS } from "@/config/api";
 // Field-mapping helpers: Backend StudentDto ↔ Frontend Student
 // ---------------------------------------------------------------------------
 
+interface BackendGraduationDto {
+  id?: string;
+  studentId?: string;
+  registrationNumber?: string;
+  degreeTitle?: string;
+  graduationMonth?: number;
+  graduationYear?: number;
+  classification?: string;
+  certificateStatus?: string;
+  updatedAt?: string;
+}
+
 interface BackendStudentDto {
   id: string;
   studentId: string;
@@ -27,11 +39,17 @@ interface BackendStudentDto {
   enrollmentDate: string | null;
   guardianName: string | null;
   guardianPhone: string | null;
+  registrationNumber?: string | null;
+  graduationDetails?: BackendGraduationDto | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
 
 function mapBackendToFrontend(dto: BackendStudentDto): Student {
+  const isGraduating = Boolean(dto.academicYear && dto.academicYear.toLowerCase().includes("final"));
+
+  const regNo = dto.graduationDetails?.registrationNumber || dto.registrationNumber || undefined;
+
   return {
     id: dto.studentId,
     studentId: dto.studentId,
@@ -42,18 +60,22 @@ function mapBackendToFrontend(dto: BackendStudentDto): Student {
     year: (dto.academicYear || "First Year") as any,
     cgpa: dto.cgpa != null ? Number(dto.cgpa) : 0,
     status: (dto.status as any) || "Active",
-    graduating: false,
+    graduating: isGraduating,
     dateOfBirth: dto.dateOfBirth || undefined,
     address: dto.address || undefined,
     enrollmentDate: dto.enrollmentDate || undefined,
     guardian: dto.guardianName
       ? { name: dto.guardianName, phone: dto.guardianPhone || "" }
       : undefined,
+    graduationDetails: dto.graduationDetails || undefined,
+    registrationNumber: regNo,
+    graduationYear: dto.graduationDetails?.graduationYear ? String(dto.graduationDetails.graduationYear) : undefined,
+    updatedAt: dto.updatedAt || undefined,
   };
 }
 
 function mapFrontendToBackend(student: Partial<Student>): Record<string, unknown> {
-  return {
+  const payload: Record<string, unknown> = {
     studentId: student.studentId,
     fullName: student.fullName,
     email: student.email,
@@ -68,7 +90,15 @@ function mapFrontendToBackend(student: Partial<Student>): Record<string, unknown
     guardianName: student.guardian?.name || "N/A",
     guardianPhone: student.guardian?.phone || "N/A",
   };
+  if (student.graduationDetails) {
+    payload.graduationDetails = student.graduationDetails;
+  }
+  if (student.registrationNumber) {
+    payload.registrationNumber = student.registrationNumber;
+  }
+  return payload;
 }
+
 
 // ---------------------------------------------------------------------------
 // Service

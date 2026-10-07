@@ -58,7 +58,20 @@ export interface Student {
   creditsCompleted?: number;
   totalCredits?: number;
   numberOfSemesters?: number;
+  registrationNumber?: string;
+  updatedAt?: string;
+  graduationDetails?: {
+    id?: string;
+    registrationNumber?: string;
+    degreeTitle?: string;
+    graduationMonth?: number;
+    graduationYear?: number;
+    classification?: string;
+    certificateStatus?: string;
+    updatedAt?: string;
+  };
 }
+
 
 /** A degree certificate associated with a student. */
 export interface Certificate {

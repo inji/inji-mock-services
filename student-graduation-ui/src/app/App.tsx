@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AuthProvider } from "@/context/AuthContext";
+import { studentService, authService } from "@/services";
 
 import LandingPage from "./components/pages/LandingPage";
 import AdminLoginPage from "./components/pages/AdminLoginPage";
@@ -17,6 +18,7 @@ import StudentCertificateGeneratedPage from "./components/pages/StudentCertifica
 import StudentProfilePage from "./components/pages/StudentProfilePage";
 import StudentGradesPage from "./components/pages/StudentGradesPage";
 import GraduationDetailsPage from "./components/pages/GraduationDetailsPage";
+import EditStudentPage from "./components/pages/EditStudentPage";
 
 type Screen =
   | "landing"
@@ -191,10 +193,28 @@ const DESIGN_WIDTHS: Record<Screen, number> = {
 export default function App() {
   const [screen, setScreen] = useState<Screen>("landing");
 
-  const go = useCallback((target: Screen) => setScreen(target), []);
+  const go = useCallback((target: Screen) => {
+    if (target === "add-student") {
+      studentService.setStudentToEdit(null);
+    }
+    if (target === "landing" || target === "admin-login" || target === "student-login") {
+      studentService.setStudentToEdit(null);
+      authService.setLoggedInStudentId(null);
+    }
+    setScreen(target);
+  }, []);
 
   useEffect(() => {
     const handleNav = (e: any) => {
+      if (e.detail === "logout") {
+        studentService.setStudentToEdit(null);
+        authService.setLoggedInStudentId(null);
+        go("landing");
+        return;
+      }
+      if (e.detail === "add-student") {
+        studentService.setStudentToEdit(null);
+      }
       if (e.detail) go(e.detail);
     };
     window.addEventListener("navigate", handleNav);
@@ -202,6 +222,10 @@ export default function App() {
   }, [go]);
 
   const handleClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target?.closest("button:disabled, button[disabled]")) {
+      return;
+    }
     const btn = getClickedButtonText(e);
 
     switch (screen) {
@@ -215,15 +239,28 @@ export default function App() {
         break;
 
       case "dashboard":
-        if (btn.includes("Add New Student") || btn.includes("Register a new")) go("add-student");
+        if (btn.includes("Add New Student") || btn.includes("Register a new")) {
+          studentService.setStudentToEdit(null);
+          go("add-student");
+        }
         else if (btn.includes("Student Registry") || btn.includes("View and edit")) go("student-registry");
-        else if (btn.includes("Logout")) go("landing");
+        else if (btn.includes("Logout")) {
+          studentService.setStudentToEdit(null);
+          authService.setLoggedInStudentId(null);
+          go("landing");
+        }
         break;
 
       case "add-student":
       case "edit-student":
-        if (btn.includes("Cancel")) go("dashboard");
-        else if (btn.includes("Back to Dashboard")) go("dashboard");
+        if (btn.includes("Cancel")) {
+          studentService.setStudentToEdit(null);
+          go("dashboard");
+        }
+        else if (btn.includes("Back to Dashboard")) {
+          studentService.setStudentToEdit(null);
+          go("dashboard");
+        }
         else if (btn.includes("Graduation Details")) go("graduation-details");
         break;
 
@@ -294,8 +331,8 @@ export default function App() {
       case "landing":                      return <LandingPage />;
       case "admin-login":                  return <AdminLoginPage />;
       case "dashboard":                    return <DashboardPage />;
-      case "add-student":                  
-      case "edit-student":                 return <AddStudentPage />;
+      case "add-student":                  return <AddStudentPage />;
+      case "edit-student":                 return <EditStudentPage />;
       case "student-registered":           return <StudentRegisteredPage />;
       case "student-detail":               return <StudentDetailPage />;
       case "certificate-form":             return <CertificateFormPage />;
@@ -319,7 +356,7 @@ export default function App() {
           minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
-          backgroundColor: screen === "admin-login" ? "#3d5c9d" : screen === "student-login" ? "#c5a55a" : "#f9fafb",
+          backgroundColor: screen === "admin-login" ? "#3d5c9d" : screen === "student-login" ? "#c5a55a" : (screen === "student-profile" || screen === "student-grades" || screen === "student-dashboard" || screen === "student-certificate-request" || screen === "student-certificate-generated") ? "#e5e7eb" : "#f9fafb",
           overflowX: "hidden",
         }}
         onClick={handleClick}

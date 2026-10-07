@@ -30,15 +30,22 @@ function BackLink() {
 function InfoField({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col">
-      <p className="font-['Inter:Regular',sans-serif] font-normal text-[12px] text-[#9ca3af] leading-[18px]">
+      <p className="font-['Inter:Regular',sans-serif] font-normal text-[12px] text-[#6b7280] leading-[18px]">
         {label}
       </p>
-      <p className="font-['Inter:Medium',sans-serif] font-medium text-[14px] text-[#101828] leading-[20px] mt-[2px]">
+      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-[#101828] leading-[20px] mt-[4px]">
         {value}
       </p>
     </div>
   );
 }
+
+const formatDate = (dateString?: string) => {
+  if (!dateString || dateString === "—") return "—";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+};
 
 // --- Main Page ---
 
@@ -67,7 +74,7 @@ export default function StudentProfilePage() {
   };
 
   return (
-    <div className="bg-[#f9fafb] min-h-screen w-full flex flex-col">
+    <div className="bg-[#e5e7eb] min-h-screen w-full flex flex-col">
       {institute && (
         <Navbar
           institute={{ ...institute, portalLabel: "Student Portal" }}
@@ -109,7 +116,7 @@ export default function StudentProfilePage() {
               <InfoField label="Student ID" value={student?.studentId || "—"} />
               <InfoField label="Email Address" value={student?.email || "—"} />
               <InfoField label="Phone Number" value={student?.phone || "—"} />
-              <InfoField label="Date of Birth" value={student?.dateOfBirth || "—"} />
+              <InfoField label="Date of Birth" value={formatDate(student?.dateOfBirth)} />
               <InfoField label="Address" value={student?.address || "—"} />
             </div>
           </div>
@@ -122,7 +129,7 @@ export default function StudentProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-[24px] gap-x-[48px] border-t border-[#f3f4f6] pt-[24px]">
               <InfoField label="Course" value={student?.course || "—"} />
               <InfoField label="Current Year" value={student?.year || "—"} />
-              <InfoField label="Enrollment Date" value={student?.enrollmentDate || "—"} />
+              <InfoField label="Enrollment Date" value={formatDate(student?.enrollmentDate)} />
             </div>
           </div>
         </div>

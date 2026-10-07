@@ -1,0 +1,122 @@
+# =====================================================================
+#  Student Graduation Use-Case — one-command setup
+#
+#  Usage (from this folder):   docker compose up --build
+#
+#  Spins up:
+#    - database        Postgres 15 (Certify schema + student tables)
+#    - certify         Inji Certify (with plugins)
+#    - certify-nginx   Public entrypoint for Certify / wallets
+#    - student-backend Spring Boot API (student-graduation-api)
+#    - student-ui      React UI served by nginx (student-graduation-ui)
+#
+#  URLs:
+#    UI ............ http://localhost:3000
+#    Backend API ... http://localhost:8085/api
+#    Certify ....... http://localhost:8091/v1/certify
+# =====================================================================
+
+name: student-graduation
+
+services:
+  database:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./student-graduation-docker/certify_init.sql:/docker-entrypoint-initdb.d/certify_init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inji_certify"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - student-net
+
+  certify:
+    image: injistack/inji-certify-with-plugins:0.14.0
+    restart: unless-stopped
+    user: root
+    environment:
+      - container_user=mosip
+      - active_profile_env=default, csvdp-farmer, postgres-student
+      - SPRING_CONFIG_NAME=certify
+      - SPRING_CONFIG_LOCATION=/home/mosip/config/
+      - enable_certify_artifactory=false
+      - download_hsm_client=false
+      - mosip_certify_domain_url=${MOSIP_CERTIFY_DOMAIN_URL:-http://localhost:8091}
+    volumes:
+      - ./student-graduation-docker/config/certify-default.properties:/home/mosip/config/certify-default.properties
+      - ./student-graduation-docker/config/certify-csvdp-farmer.properties:/home/mosip/config/certify-csvdp-farmer.properties
+      - ./student-graduation-docker/config/certify-postgres-student.properties:/home/mosip/config/certify-postgres-student.properties
+      - ./student-graduation-docker/config/certify-mock-mdl.properties:/home/mosip/config/certify-mock-mdl.properties
+      - ./student-graduation-docker/config/farmer_identity_data.csv:/home/mosip/config/farmer_identity_data.csv
+      - ./student-graduation-docker/config/vp_request_config.json:/home/mosip/config/vp_request_config.json
+      - certify-pkcs12:/home/mosip/CERTIFY_PKCS12
+    ports:
+      - "8090:8090"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - student-net
+
+  certify-nginx:
+    image: nginx:stable
+    restart: unless-stopped
+    volumes:
+      - ./student-graduation-docker/certify-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./student-graduation-docker/config/credential-template.html:/config/server/credential-template.html:ro
+      - ./student-graduation-docker/config/vp_request_config.json:/config/server/vp_request_config.json:ro
+    ports:
+      - "8091:80"
+    depends_on:
+      - certify
+    networks:
+      - student-net
+
+  student-backend:
+    build:
+      context: ./student-graduation-api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/inji_certify?currentSchema=certify
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA=certify
+      - CERTIFY_PRE_AUTH_ENDPOINT=http://certify-nginx:80/v1/certify/pre-authorized-data
+    ports:
+      - "8085:8085"
+    depends_on:
+      database:
+        condition: service_healthy
+      certify-nginx:
+        condition: service_started
+    networks:
+      - student-net
+
+  student-ui:
+    build:
+      context: ./student-graduation-ui
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - student-backend
+    networks:
+      - student-net
+
+networks:
+  student-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  certify-pkcs12:

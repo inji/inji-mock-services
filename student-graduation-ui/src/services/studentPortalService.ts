@@ -29,30 +29,52 @@ export const studentPortalService = {
 
     // Check if the student has graduation records
     const graduationDetails = await studentService.getGraduationDetails(studentId);
-    const hasGraduated = Array.isArray(graduationDetails) ? graduationDetails.length > 0 : !!graduationDetails;
+    // Assuming backend returns an array for getGraduationDetails sometimes, or an object
+    const gradDetailObj = Array.isArray(graduationDetails) ? graduationDetails[0] : graduationDetails;
+
+    const isGraduated = student.status === "Graduated";
+    const hasGradDetails = gradDetailObj?.graduationMonth != null && Boolean(gradDetailObj?.classification?.trim());
 
     // Generate stats dynamically from the actual student record
     const stats = [
       { id: "stat-cgpa", label: "Current CGPA", value: student.cgpa.toString(), icon: "cgpa" },
-      { id: "stat-credits", label: "Completed Credits", value: `${student.creditsCompleted || 120}/${student.totalCredits || 120}`, icon: "credits" },
-      { id: "stat-certs", label: "Certificates", value: hasGraduated ? "1" : "0", icon: "certificates" },
+      { id: "stat-credits", label: "Completed Credits", value: `${student.creditsCompleted || 0}/${student.totalCredits || 0}`, icon: "credits" },
+      { id: "stat-certs", label: "Certificates", value: hasGradDetails ? "1" : "0", icon: "certificates" },
     ];
 
-    const notifications: any[] = [
-      {
-        id: "notif-2",
-        type: "info",
-        message: "Semester results are now available",
-        timeAgo: "1 day ago",
+    const notifications: any[] = [];
+
+    if (isGraduated || hasGradDetails) {
+      let updatedAtStr = gradDetailObj?.updatedAt || student.updatedAt;
+      let timeAgo = "just now";
+      
+      if (updatedAtStr) {
+        if (!updatedAtStr.endsWith("Z")) {
+          updatedAtStr += "Z";
+        }
+        const date = new Date(updatedAtStr);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        
+        if (diffInSeconds < 60) {
+          timeAgo = "just now";
+        } else if (diffInSeconds < 3600) {
+          const m = Math.floor(diffInSeconds / 60);
+          timeAgo = `${m} minute${m > 1 ? "s" : ""} ago`;
+        } else if (diffInSeconds < 86400) {
+          const h = Math.floor(diffInSeconds / 3600);
+          timeAgo = `${h} hour${h > 1 ? "s" : ""} ago`;
+        } else {
+          const d = Math.floor(diffInSeconds / 86400);
+          timeAgo = `${d} day${d > 1 ? "s" : ""} ago`;
+        }
       }
-    ];
 
-    if (hasGraduated) {
       notifications.unshift({
         id: "notif-1",
         type: "success",
         message: "Your degree certificate request has been approved!",
-        timeAgo: "2 hours ago",
+        timeAgo: timeAgo,
       });
     }
 
@@ -68,25 +90,35 @@ export const studentPortalService = {
     return studentService.getStudentById(studentId);
   },
 
-  /** Check certificate eligibility for a student. */
+  /** Check certificate eligibility for a student based on graduation logic. */
   async checkEligibility(studentId: string): Promise<{ eligible: boolean; message: string }> {
     const student = await studentService.getStudentById(studentId);
 
     if (!student) {
-      return { eligible: false, message: "Student not found." };
+      return {
+        eligible: false,
+        message: "Student record not found.",
+      };
     }
 
-    const eligible =
-      (student.creditsCompleted ?? 120) >= (student.totalCredits ?? 120) &&
-      student.status === "Active";
+    const graduationDetails = await studentService.getGraduationDetails(studentId);
+    const gradDetailObj = Array.isArray(graduationDetails) ? graduationDetails[0] : graduationDetails;
+
+    const isGraduated = student.status?.toUpperCase() === "GRADUATED";
+    const hasGradDetails =
+      Boolean(student.graduationDetails?.graduationMonth != null && student.graduationDetails?.classification?.trim()) ||
+      Boolean(gradDetailObj?.graduationMonth != null && gradDetailObj?.classification?.trim());
+
+    const isEligible = isGraduated || hasGradDetails;
 
     return {
-      eligible,
-      message: eligible
+      eligible: isEligible,
+      message: isEligible
         ? "You have completed all required credits and met all graduation requirements. You are eligible to request your degree certificate."
-        : "You have not yet completed all graduation requirements.",
+        : "Your graduation certificate details (graduation month and classification) have not yet been completed by the administration.",
     };
   },
+
 
   /** Submit a certificate generation request. */
   async requestCertificate(studentId: string): Promise<Certificate> {
@@ -167,8 +199,8 @@ export const studentPortalService = {
     return {
       ...studentAcademicPerformance,
       overallCgpa: student.cgpa,
-      totalCredits: student.totalCredits || 120,
-      creditsCompleted: student.creditsCompleted || 120,
+      totalCredits: student.totalCredits || 0,
+      creditsCompleted: student.creditsCompleted || 0,
     };
   },
 };

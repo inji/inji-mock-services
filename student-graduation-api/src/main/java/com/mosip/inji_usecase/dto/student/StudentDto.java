@@ -71,6 +71,10 @@ public class StudentDto {
 
     private String status;
 
+    private String registrationNumber;
+
+    private StudentGraduationDto graduationDetails;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

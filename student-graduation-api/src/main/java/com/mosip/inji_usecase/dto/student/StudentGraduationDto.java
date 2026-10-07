@@ -36,7 +36,6 @@ public class StudentGraduationDto {
     @Size(max = 200, message = "Degree title must not exceed 200 characters")
     private String degreeTitle;
 
-    @NotNull(message = "Graduation month is required")
     @Min(value = 1, message = "Graduation month must be between 1 and 12")
     @Max(value = 12, message = "Graduation month must be between 1 and 12")
     private Short graduationMonth;
@@ -44,9 +43,9 @@ public class StudentGraduationDto {
     @NotNull(message = "Graduation year is required")
     private Integer graduationYear;
 
-    @NotBlank(message = "Classification is required")
     @Size(max = 100, message = "Classification must not exceed 100 characters")
     private String classification;
+
 
     private String certificateStatus;
 
