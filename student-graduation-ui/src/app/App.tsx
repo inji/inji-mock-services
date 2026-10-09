@@ -249,6 +249,9 @@ export default function App() {
           authService.setLoggedInStudentId(null);
           go("landing");
         }
+        else if (btn.includes("View") || isStudentRowClick(e)) {
+          go("student-detail");
+        }
         break;
 
       case "add-student":

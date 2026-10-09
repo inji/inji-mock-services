@@ -59,6 +59,7 @@ export interface Student {
   totalCredits?: number;
   numberOfSemesters?: number;
   registrationNumber?: string;
+  createdAt?: string;
   updatedAt?: string;
   graduationDetails?: {
     id?: string;
@@ -68,6 +69,7 @@ export interface Student {
     graduationYear?: number;
     classification?: string;
     certificateStatus?: string;
+    createdAt?: string;
     updatedAt?: string;
   };
 }

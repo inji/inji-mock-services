@@ -8,6 +8,7 @@
 import { studentNotifications, studentDashboardStats, certificates, studentAcademicPerformance } from "@/data";
 import type { Student, StudentDashboardData, Certificate, AcademicPerformanceData } from "@/data/types";
 import { studentService } from "./studentService";
+import { activityService } from "./activityService";
 import { API_BASE_URL } from "@/config/api";
 
 // API endpoint references for future REST integration
@@ -168,6 +169,23 @@ export const studentPortalService = {
         offerUri = offerUri.replace("http://certify-nginx:80", `http://${window.location.hostname}:8091`);
         // Handle URL encoded versions as well
         offerUri = offerUri.replace("http%3A%2F%2Fcertify-nginx%3A80", encodeURIComponent(`http://${window.location.hostname}:8091`));
+
+        // Log legitimate activity
+        studentService.getStudentById(studentId).then((st) => {
+          activityService.logActivity({
+            type: "certificate-requested",
+            title: "Certificate request received",
+            subject: st?.fullName || studentId,
+            timestamp: new Date().toISOString(),
+          });
+        }).catch(() => {
+          activityService.logActivity({
+            type: "certificate-requested",
+            title: "Certificate request received",
+            subject: studentId,
+            timestamp: new Date().toISOString(),
+          });
+        });
       }
       
       return { credentialOfferUri: offerUri };

@@ -7,6 +7,7 @@
 import { courseOptions, academicYearOptions, newStudentDefaults } from "@/data";
 import type { Student } from "@/data/types";
 import { API_ENDPOINTS, DEFAULT_HEADERS } from "@/config/api";
+import { activityService } from "./activityService";
 
 // ---------------------------------------------------------------------------
 // Field-mapping helpers: Backend StudentDto ↔ Frontend Student
@@ -70,6 +71,7 @@ function mapBackendToFrontend(dto: BackendStudentDto): Student {
     graduationDetails: dto.graduationDetails || undefined,
     registrationNumber: regNo,
     graduationYear: dto.graduationDetails?.graduationYear ? String(dto.graduationDetails.graduationYear) : undefined,
+    createdAt: dto.createdAt || undefined,
     updatedAt: dto.updatedAt || undefined,
   };
 }
@@ -182,6 +184,12 @@ export const studentService = {
     const created: BackendStudentDto = await response.json();
     const student = mapBackendToFrontend(created);
     studentService._lastCreatedStudent = student;
+    activityService.logActivity({
+      type: "student-registered",
+      title: "New student registered",
+      subject: student.fullName,
+      timestamp: student.createdAt || new Date().toISOString(),
+    });
     return student;
   },
 
@@ -219,7 +227,14 @@ export const studentService = {
     }
 
     const updated: BackendStudentDto = await response.json();
-    return mapBackendToFrontend(updated);
+    const result = mapBackendToFrontend(updated);
+    activityService.logActivity({
+      type: "student-updated",
+      title: "Student information updated",
+      subject: result.fullName,
+      timestamp: result.updatedAt || new Date().toISOString(),
+    });
+    return result;
   },
 
   /** Delete a student record by student ID via the backend. */
@@ -264,7 +279,14 @@ export const studentService = {
       throw new Error(`Failed to add graduation details: ${errorText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    activityService.logActivity({
+      type: "certificate-issued",
+      title: "Certificate issued",
+      subject: details.studentName || details.degreeTitle || studentId,
+      timestamp: new Date().toISOString(),
+    });
+    return data;
   },
 
   /** Get graduation details for a student. */
