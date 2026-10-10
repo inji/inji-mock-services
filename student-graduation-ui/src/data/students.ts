@@ -1,0 +1,183 @@
+import type { Student } from "./types";
+
+// The full student registry. Ordered exactly as shown in the registry table.
+export const students: Student[] = [
+  {
+    id: "STU001234",
+    studentId: "STU001234",
+    fullName: "John Smith",
+    email: "john.smith@student.edu",
+    phone: "+1 234 567 8900",
+    course: "Bachelor of Computer Science",
+    year: "Final Year",
+    cgpa: 8.5,
+    status: "Active",
+    graduating: true,
+    dateOfBirth: "May 15, 2000",
+    address: "123 Main St, City, State 12345",
+    enrollmentDate: "September 2022",
+    graduationYear: "2026",
+    creditsCompleted: 120,
+    totalCredits: 120,
+    numberOfSemesters: 8,
+    guardian: { name: "Robert Smith", phone: "+1 234 567 8901" },
+  },
+  {
+    id: "STU001235",
+    studentId: "STU001235",
+    fullName: "Emma Johnson",
+    email: "emma.johnson@student.edu",
+    course: "Bachelor of Engineering",
+    year: "Third Year",
+    cgpa: 9.2,
+    status: "Active",
+    graduating: false,
+  },
+  {
+    id: "STU001236",
+    studentId: "STU001236",
+    fullName: "Michael Brown",
+    email: "michael.brown@student.edu",
+    course: "Master of Business Administration",
+    year: "Second Year",
+    cgpa: 7.8,
+    status: "Active",
+    graduating: false,
+  },
+  {
+    id: "STU001237",
+    studentId: "STU001237",
+    fullName: "Sarah Davis",
+    email: "sarah.davis@student.edu",
+    course: "Bachelor of Arts",
+    year: "Final Year",
+    cgpa: 8.9,
+    status: "Active",
+    graduating: true,
+  },
+  {
+    id: "STU001238",
+    studentId: "STU001238",
+    fullName: "James Wilson",
+    email: "james.wilson@student.edu",
+    course: "Bachelor of Commerce",
+    year: "Third Year",
+    cgpa: 8.1,
+    status: "Active",
+    graduating: false,
+  },
+  {
+    id: "STU001239",
+    studentId: "STU001239",
+    fullName: "Olivia Martinez",
+    email: "olivia.martinez@student.edu",
+    course: "Bachelor of Science",
+    year: "Second Year",
+    cgpa: 9.0,
+    status: "Active",
+    graduating: false,
+  },
+  {
+    id: "STU001240",
+    studentId: "STU001240",
+    fullName: "William Garcia",
+    email: "william.garcia@student.edu",
+    course: "Master of Science",
+    year: "Final Year",
+    cgpa: 8.7,
+    status: "Active",
+    graduating: true,
+  },
+  {
+    id: "STU001241",
+    studentId: "STU001241",
+    fullName: "Sophia Rodriguez",
+    email: "sophia.rodriguez@student.edu",
+    course: "Bachelor of Computer Science",
+    year: "Second Year",
+    cgpa: 9.1,
+    status: "Active",
+    graduating: false,
+  },
+  {
+    id: "STU001242",
+    studentId: "STU001242",
+    fullName: "Benjamin Lee",
+    email: "benjamin.lee@student.edu",
+    course: "Bachelor of Engineering",
+    year: "Final Year",
+    cgpa: 8.3,
+    status: "Active",
+    graduating: true,
+  },
+  {
+    id: "STU001243",
+    studentId: "STU001243",
+    fullName: "Isabella Taylor",
+    email: "isabella.taylor@student.edu",
+    course: "Master of Arts",
+    year: "First Year",
+    cgpa: 8.6,
+    status: "Active",
+    graduating: false,
+  },
+  {
+    id: "STU001244",
+    studentId: "STU001244",
+    fullName: "Alexander Anderson",
+    email: "alexander.anderson@student.edu",
+    course: "Bachelor of Commerce",
+    year: "Final Year",
+    cgpa: 7.9,
+    status: "Active",
+    graduating: true,
+  },
+  {
+    id: "STU001245",
+    studentId: "STU001245",
+    fullName: "Mia Thomas",
+    email: "mia.thomas@student.edu",
+    course: "Bachelor of Science",
+    year: "Third Year",
+    cgpa: 9.3,
+    status: "Active",
+    graduating: false,
+  },
+];
+
+/** Students shown in the dashboard "Newly Registered Students" table. */
+export const newlyRegisteredStudentIds = ["STU001234", "STU001235", "STU001236"];
+
+/** Course options offered by the institute (used for dropdowns / filters). */
+export const courseOptions: string[] = [
+  "Bachelor of Computer Science",
+  "Bachelor of Engineering",
+  "Bachelor of Arts",
+  "Bachelor of Commerce",
+  "Bachelor of Science",
+  "Master of Business Administration",
+  "Master of Science",
+  "Master of Arts",
+];
+
+/** Academic year options (used for dropdowns / filters). */
+export const academicYearOptions: string[] = [
+  "First Year",
+  "Second Year",
+  "Third Year",
+  "Final Year",
+];
+
+/** Default values used to prefill the "Add New Student" form. */
+export const newStudentDefaults = {
+  studentId: "STU001234",
+  fullName: "John Doe",
+  email: "student@email.com",
+  phone: "+1 234 567 8900",
+  address: "123 Main Street, City, State 12345",
+  guardianName: "Parent or Guardian Name",
+  guardianPhone: "+1 234 567 8900",
+};
+
+export const getStudentById = (id: string): Student | undefined =>
+  students.find((s) => s.id === id || s.studentId === id);
