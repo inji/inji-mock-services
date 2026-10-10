@@ -152,43 +152,33 @@ export default function EducationalInstitutePortal() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [formValues, setFormValues] = useState<Partial<Student>>({
+  // CGPA is intentionally not part of this form (will be captured later).
+  // createStudent() still sends the default value; updateStudent() keeps the existing value.
+  const emptyForm: Partial<Student> = {
     studentId: "",
     fullName: "",
     email: "",
     phone: "",
     address: "",
-    course: "Bachelor of Computer Science",
-    year: "First Year" as any,
+    course: "",
+    year: "" as any,
     dateOfBirth: "",
-    enrollmentDate: new Date().toISOString().split("T")[0],
-    cgpa: 0,
+    enrollmentDate: "",
     guardian: { name: "", phone: "" },
-  });
+  };
+
+  const [formValues, setFormValues] = useState<Partial<Student>>(emptyForm);
 
   useEffect(() => {
     instituteService.getInstitute().then(setInstitute);
     studentService.getCourseOptions().then(setCourses);
     studentService.getAcademicYearOptions().then(setYears);
     
-    const toEdit = studentService.getStudentToEdit();
-    if (toEdit) {
-      setIsEditMode(true);
-      setEditingId(toEdit.id || toEdit.studentId);
-      setFormValues({
-        studentId: toEdit.studentId || "",
-        fullName: toEdit.fullName || "",
-        email: toEdit.email || "",
-        phone: toEdit.phone || "",
-        address: toEdit.address || "",
-        course: toEdit.course || "Bachelor of Computer Science",
-        year: toEdit.year || "First Year" as any,
-        dateOfBirth: toEdit.dateOfBirth || "",
-        enrollmentDate: toEdit.enrollmentDate || new Date().toISOString().split("T")[0],
-        cgpa: toEdit.cgpa || 0,
-        guardian: toEdit.guardian || { name: "", phone: "" },
-      });
-    }
+    // AddStudentPage is strictly for registering a new student
+    studentService.setStudentToEdit(null);
+    setIsEditMode(false);
+    setEditingId(null);
+    setFormValues(emptyForm);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -208,19 +198,7 @@ export default function EducationalInstitutePortal() {
           new CustomEvent("navigate", { detail: "student-registered" })
         );
         // Reset form
-        setFormValues({
-          studentId: "",
-          fullName: "",
-          email: "",
-          phone: "",
-          address: "",
-          course: "Bachelor of Computer Science",
-          year: "First Year" as any,
-          dateOfBirth: "",
-          enrollmentDate: new Date().toISOString().split("T")[0],
-          cgpa: 0,
-          guardian: { name: "", phone: "" },
-        });
+        setFormValues(emptyForm);
       }
     } catch (error: any) {
       setFeedback({ type: "error", message: error?.message || "Failed to save student. Please try again." });
@@ -229,254 +207,347 @@ export default function EducationalInstitutePortal() {
     }
   };
 
+  const goBack = () =>
+    window.dispatchEvent(new CustomEvent("navigate", { detail: isEditMode ? "student-registry" : "dashboard" }));
+
+  // Make sure an existing value (edit mode) is always selectable even if it isn't in the option list
+  const courseList = courses.length > 0 ? courses : ["Bachelor of Computer Science"];
+  const courseOptionsWithCurrent =
+    formValues.course && !courseList.includes(formValues.course) ? [formValues.course, ...courseList] : courseList;
+  const yearList = years.length > 0 ? years : ["First Year", "Second Year", "Third Year", "Final Year"];
+  const yearOptionsWithCurrent =
+    formValues.year && !yearList.includes(formValues.year as string) ? [formValues.year as string, ...yearList] : yearList;
+
   return (
     <div className="bg-[#f9fafb] relative size-full min-h-[1000px]" data-name="Educational Institute Portal">
       <Header institute={institute} />
 
-      <div className="absolute left-[32px] top-[81px] pt-[32px] w-[1280px] flex flex-col gap-[24px]">
-        <div className="flex items-center gap-[12px]">
-          <button 
+      <div className="absolute left-0 top-[81px] w-[1344px] pt-[32px] pb-[48px] flex justify-center">
+        <div className="w-[960px] flex flex-col gap-[24px]">
+          {/* Back link */}
+          <button
             type="button"
-            className="p-[8px] hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center text-[#4a5565]"
-            onClick={() => window.dispatchEvent(new CustomEvent("navigate", { detail: isEditMode ? "student-registry" : "dashboard" }))}
-            title={isEditMode ? "Back to Registry" : "Back to Dashboard"}
+            id="add-student-back"
+            className="self-start flex items-center gap-[8px] text-[16px] leading-[24px] text-[#4a5565] hover:text-[#101828] transition-colors"
+            onClick={goBack}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15.8333 10H4.16667" />
-              <path d="M8.33333 14.1667L4.16667 10L8.33333 5.83333" />
+              <path d="M10 15.8333L4.16667 10L10 4.16667" />
             </svg>
+            {isEditMode ? "Back to Registry" : "Back to Dashboard"}
           </button>
-          <div>
-            <h2 className="text-[24px] font-semibold text-[#101828]">
-              {isEditMode ? "Edit Student Details" : "Add New Student"}
-            </h2>
-            <p className="text-[16px] text-[#4a5565]">
-              {isEditMode ? "Update the student's information." : "Enter the student's details to register them in the system."}
-            </p>
-          </div>
-        </div>
 
-        {/* Feedback banner */}
-        {feedback && (
-          <div
-            className={`p-[16px] rounded-[12px] text-[14px] font-medium ${
-              feedback.type === "success"
-                ? "bg-[#dcfce7] text-[#016630] border border-[#bbf7d0]"
-                : "bg-[#fef2f2] text-[#991b1b] border border-[#fecaca]"
-            }`}
-          >
-            {feedback.message}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="bg-white p-[32px] rounded-[16px] border border-[#e5e7eb] shadow-sm flex flex-col gap-[24px] w-full">
-          <Heading2 />
-          <div className="grid grid-cols-2 gap-[24px]">
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">Student ID *</label>
-              <input
-                type="text"
-                value={formValues.studentId || ""}
-                onChange={(e) => setFormValues({ ...formValues, studentId: e.target.value })}
-                placeholder="e.g. STU-2026-001"
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">Full Name *</label>
-              <input
-                type="text"
-                value={formValues.fullName || ""}
-                onChange={(e) => setFormValues({ ...formValues, fullName: e.target.value })}
-                placeholder="e.g. Aarav Sharma"
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">Email Address *</label>
-              <input
-                type="email"
-                value={formValues.email || ""}
-                onChange={(e) => setFormValues({ ...formValues, email: e.target.value })}
-                placeholder="e.g. student@university.edu"
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">Phone Number *</label>
-              <input
-                type="text"
-                value={formValues.phone || ""}
-                onChange={(e) => setFormValues({ ...formValues, phone: e.target.value })}
-                placeholder="e.g. +91 9876543210"
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">Date of Birth *</label>
-              <input
-                type="date"
-                value={formValues.dateOfBirth || ""}
-                onChange={(e) => setFormValues({ ...formValues, dateOfBirth: e.target.value })}
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">Enrollment Date *</label>
-              <input
-                type="date"
-                value={formValues.enrollmentDate || ""}
-                onChange={(e) => setFormValues({ ...formValues, enrollmentDate: e.target.value })}
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">Course / Program *</label>
-              <select
-                value={formValues.course || ""}
-                onChange={(e) => setFormValues({ ...formValues, course: e.target.value })}
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px] bg-white"
-              >
-                {(courses.length > 0 ? courses : ["Bachelor of Computer Science"]).map((c, idx) => (
-                  <option key={idx} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">Academic Year *</label>
-              <select
-                value={formValues.year || ""}
-                onChange={(e) => setFormValues({ ...formValues, year: e.target.value as any })}
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px] bg-white"
-              >
-                {(years.length > 0 ? years : ["First Year", "Second Year", "Third Year", "Final Year"]).map((y, idx) => (
-                  <option key={idx} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[14px] font-medium text-[#364153]">CGPA</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="10"
-                value={formValues.cgpa || 0}
-                onChange={(e) => setFormValues({ ...formValues, cgpa: parseFloat(e.target.value) || 0 })}
-                placeholder="e.g. 8.5"
-                className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-[6px]">
-            <label className="text-[14px] font-medium text-[#364153]">Address *</label>
-            <input
-              type="text"
-              value={formValues.address || ""}
-              onChange={(e) => setFormValues({ ...formValues, address: e.target.value })}
-              placeholder="e.g. 123 Main Street, City, State 12345"
-              className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-              required
-            />
-          </div>
-
-          {/* Graduation Details Section (Edit Mode Only) */}
-          {isEditMode && (
-            <div className="border-t border-[#e5e7eb] pt-[20px] pb-[10px] flex items-center justify-between">
-              <div>
-                <p className="font-medium text-[18px] text-[#101828]">Graduation Status</p>
-                <p className="text-[14px] text-[#4a5565]">Manage graduation records to issue credentials</p>
-              </div>
-              <button
-                type="button"
-                className="px-[16px] py-[8px] bg-green-600 hover:bg-green-700 text-white rounded-[8px] text-[14px] font-medium transition-colors"
-                data-name="Button"
-                onClick={() => window.dispatchEvent(new CustomEvent("navigate", { detail: "graduation-details" }))}
-              >
-                Graduation Details
-              </button>
+          {/* Feedback banner */}
+          {feedback && (
+            <div
+              className={`p-[16px] rounded-[12px] text-[14px] font-medium ${
+                feedback.type === "success"
+                  ? "bg-[#dcfce7] text-[#016630] border border-[#bbf7d0]"
+                  : "bg-[#fef2f2] text-[#991b1b] border border-[#fecaca]"
+              }`}
+            >
+              {feedback.message}
             </div>
           )}
 
-          {/* Guardian Information Section */}
-          <div className="border-t border-[#e5e7eb] pt-[20px]">
-            <p className="font-medium text-[18px] text-[#101828] mb-[16px]">Guardian Information</p>
-            <div className="grid grid-cols-2 gap-[24px]">
-              <div className="flex flex-col gap-[6px]">
-                <label className="text-[14px] font-medium text-[#364153]">Guardian Name *</label>
-                <input
-                  type="text"
-                  value={formValues.guardian?.name || ""}
-                  onChange={(e) =>
-                    setFormValues({
-                      ...formValues,
-                      guardian: { name: e.target.value, phone: formValues.guardian?.phone || "" },
-                    })
-                  }
-                  placeholder="e.g. Parent or Guardian Name"
-                  className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-[6px]">
-                <label className="text-[14px] font-medium text-[#364153]">Guardian Phone *</label>
-                <input
-                  type="text"
-                  value={formValues.guardian?.phone || ""}
-                  onChange={(e) =>
-                    setFormValues({
-                      ...formValues,
-                      guardian: { name: formValues.guardian?.name || "", phone: e.target.value },
-                    })
-                  }
-                  placeholder="e.g. +91 9876543210"
-                  className="px-[12px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px]"
-                  required
-                />
-              </div>
+          <form
+            onSubmit={handleSubmit}
+            id="add-student-form"
+            className="bg-white p-[32px] rounded-[10px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] flex flex-col w-full"
+          >
+            {/* Title */}
+            <div className="flex flex-col gap-[4px] mb-[32px]">
+              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[32px] text-[#101828] text-[24px] tracking-[0.0703px]">
+                {isEditMode ? "Edit Student Details" : "Add New Student"}
+              </h2>
+              <p className="font-['Inter:Regular',sans-serif] font-normal leading-[24px] text-[#4a5565] text-[16px] tracking-[-0.3125px]">
+                {isEditMode ? "Update the student's information" : "Register a new student in the system"}
+              </p>
             </div>
-          </div>
 
-          <div className="flex justify-between items-center pt-[16px] border-t border-[#e5e7eb]">
-            <button
-              type="button"
-              className="px-[20px] py-[10px] border border-[#d1d5dc] rounded-[10px] text-[16px] font-medium text-[#4a5565]"
-              data-name="Button"
-            >
-              Cancel
-            </button>
+            {/* Personal Information */}
+            <section className="flex flex-col gap-[16px]">
+              <Heading2 />
+              <div className="grid grid-cols-2 gap-x-[16px] gap-y-[16px]">
+                <Field label="Student ID" htmlFor="student-id">
+                  <input
+                    id="student-id"
+                    type="text"
+                    value={formValues.studentId || ""}
+                    onChange={(e) => setFormValues({ ...formValues, studentId: e.target.value })}
+                    placeholder="STU001234"
+                    className={inputClass}
+                    required
+                  />
+                </Field>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-[24px] py-[12px] bg-[#3d5092] hover:bg-[#2b3c73] disabled:opacity-50 text-white rounded-[10px] text-[16px] font-medium transition-colors"
-              data-name="Button"
-            >
-              {isSubmitting ? "Processing..." : (isEditMode ? "Update Student" : "Register Student")}
-            </button>
-          </div>
-        </form>
+                <Field label="Full Name" htmlFor="full-name">
+                  <input
+                    id="full-name"
+                    type="text"
+                    value={formValues.fullName || ""}
+                    onChange={(e) => setFormValues({ ...formValues, fullName: e.target.value })}
+                    placeholder="John Doe"
+                    className={inputClass}
+                    required
+                  />
+                </Field>
+
+                <Field label="Email Address" htmlFor="email">
+                  <input
+                    id="email"
+                    type="email"
+                    value={formValues.email || ""}
+                    onChange={(e) => setFormValues({ ...formValues, email: e.target.value })}
+                    placeholder="student@email.com"
+                    className={inputClass}
+                    required
+                  />
+                </Field>
+
+                <Field label="Phone Number" htmlFor="phone">
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={formValues.phone || ""}
+                    onChange={(e) => setFormValues({ ...formValues, phone: e.target.value })}
+                    placeholder="+1 234 567 8900"
+                    className={inputClass}
+                    required
+                  />
+                </Field>
+
+                <Field label="Date of Birth" htmlFor="dob">
+                  <input
+                    id="dob"
+                    type="date"
+                    value={formValues.dateOfBirth || ""}
+                    onChange={(e) => setFormValues({ ...formValues, dateOfBirth: e.target.value })}
+                    className={inputClass}
+                    required
+                  />
+                </Field>
+                <div />
+
+                <div className="col-span-2">
+                  <Field label="Address" htmlFor="address">
+                    <input
+                      id="address"
+                      type="text"
+                      value={formValues.address || ""}
+                      onChange={(e) => setFormValues({ ...formValues, address: e.target.value })}
+                      placeholder="123 Main Street, City, State 12345"
+                      className={inputClass}
+                      required
+                    />
+                  </Field>
+                </div>
+              </div>
+            </section>
+
+            {/* Academic Information */}
+            <section className="flex flex-col gap-[16px] border-t border-[#e5e7eb] mt-[24px] pt-[24px]">
+              <SectionHeading>Academic Information</SectionHeading>
+              <div className="grid grid-cols-2 gap-x-[16px] gap-y-[16px]">
+                <div className="col-span-2">
+                  <Field label="Course/Program" htmlFor="course" spaced>
+                    <SelectWrapper>
+                      <select
+                        id="course"
+                        value={formValues.course || ""}
+                        onChange={(e) => setFormValues({ ...formValues, course: e.target.value })}
+                        className={selectClass}
+                        required
+                      >
+                        <option value="" disabled hidden></option>
+                        {courseOptionsWithCurrent.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </SelectWrapper>
+                  </Field>
+                </div>
+
+                <Field label="Enrollment Date" htmlFor="enrollment-date">
+                  <input
+                    id="enrollment-date"
+                    type="date"
+                    value={formValues.enrollmentDate || ""}
+                    onChange={(e) => setFormValues({ ...formValues, enrollmentDate: e.target.value })}
+                    className={inputClass}
+                    required
+                  />
+                </Field>
+
+                <Field label="Academic Year" htmlFor="academic-year" spaced>
+                  <SelectWrapper>
+                    <select
+                      id="academic-year"
+                      value={(formValues.year as string) || ""}
+                      onChange={(e) => setFormValues({ ...formValues, year: e.target.value as any })}
+                      className={selectClass}
+                      required
+                    >
+                      <option value="" disabled hidden></option>
+                      {yearOptionsWithCurrent.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </SelectWrapper>
+                </Field>
+              </div>
+            </section>
+
+            {/* Graduation Details Section (Edit Mode Only) */}
+            {isEditMode && (
+              <section className="border-t border-[#e5e7eb] mt-[24px] pt-[24px] flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-[18px] text-[#101828]">Graduation Status</p>
+                  <p className="text-[14px] text-[#4a5565]">Manage graduation records to issue credentials</p>
+                </div>
+                <button
+                  type="button"
+                  className="px-[16px] py-[8px] bg-green-600 hover:bg-green-700 text-white rounded-[8px] text-[14px] font-medium transition-colors"
+                  data-name="Button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("navigate", { detail: "graduation-details" }))}
+                >
+                  Graduation Details
+                </button>
+              </section>
+            )}
+
+            {/* Guardian Information */}
+            <section className="flex flex-col gap-[16px] border-t border-[#e5e7eb] mt-[24px] pt-[24px]">
+              <SectionHeading>Guardian Information</SectionHeading>
+              <div className="grid grid-cols-2 gap-x-[16px] gap-y-[16px]">
+                <Field label="Guardian Name" htmlFor="guardian-name">
+                  <input
+                    id="guardian-name"
+                    type="text"
+                    value={formValues.guardian?.name || ""}
+                    onChange={(e) =>
+                      setFormValues({
+                        ...formValues,
+                        guardian: { name: e.target.value, phone: formValues.guardian?.phone || "" },
+                      })
+                    }
+                    placeholder="Parent or Guardian Name"
+                    className={inputClass}
+                    required
+                  />
+                </Field>
+
+                <Field label="Guardian Phone" htmlFor="guardian-phone">
+                  <input
+                    id="guardian-phone"
+                    type="tel"
+                    value={formValues.guardian?.phone || ""}
+                    onChange={(e) =>
+                      setFormValues({
+                        ...formValues,
+                        guardian: { name: formValues.guardian?.name || "", phone: e.target.value },
+                      })
+                    }
+                    placeholder="+1 234 567 8900"
+                    className={inputClass}
+                    required
+                  />
+                </Field>
+              </div>
+            </section>
+
+            {/* Actions */}
+            <div className="flex justify-end items-center gap-[12px] border-t border-[#e5e7eb] mt-[40px] pt-[24px]">
+              <button
+                type="button"
+                id="add-student-cancel"
+                onClick={goBack}
+                className="h-[40px] px-[16px] bg-white border border-[#d1d5dc] rounded-[8px] text-[14px] font-medium text-[#364153] hover:bg-[#f9fafb] transition-colors"
+                data-name="Button"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                id="add-student-submit"
+                disabled={isSubmitting}
+                className="h-[40px] px-[16px] bg-[#f0b100] hover:bg-[#d99e00] disabled:opacity-50 text-white rounded-[8px] text-[14px] font-medium transition-colors"
+                data-name="Button"
+              >
+                {isSubmitting ? "Processing..." : isEditMode ? "Update Student" : "Register Student"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Form building blocks (match Figma: 14px label + red asterisk, 42px inputs)
+// ---------------------------------------------------------------------------
+
+const inputClass =
+  "w-full h-[42px] px-[12px] bg-white border border-[#d1d5dc] rounded-[8px] text-[16px] text-[#101828] placeholder:text-[#99a1af] outline-none focus:border-[#f0b100] focus:ring-2 focus:ring-[#f0b100]/20 transition-colors";
+
+const selectClass = `${inputClass} appearance-none pr-[36px] cursor-pointer`;
+
+function Field({
+  label,
+  htmlFor,
+  spaced = false,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  /** Figma shows "Course/Program *" and "Academic Year *" with a space before the asterisk */
+  spaced?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-[6px] w-full">
+      <label htmlFor={htmlFor} className="text-[14px] leading-[20px] font-normal text-[#364153]">
+        {label}
+        {spaced ? " " : ""}
+        <span className="text-[#fb2c36]">*</span>
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="font-['Inter:Medium',sans-serif] font-medium leading-[28px] text-[#101828] text-[18px] tracking-[-0.4395px]">
+      {children}
+    </p>
+  );
+}
+
+function SelectWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative w-full">
+      {children}
+      <svg
+        className="pointer-events-none absolute right-[12px] top-1/2 -translate-y-1/2 text-[#99a1af]"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M4 6l4 4 4-4" />
+      </svg>
     </div>
   );
 }

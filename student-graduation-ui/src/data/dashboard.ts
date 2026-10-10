@@ -29,9 +29,9 @@ export const dashboardStatTiles: DashboardStat[] = [
 
 // The dashboard "Upcoming Graduations" list.
 export const upcomingGraduations: UpcomingGraduation[] = [
-  { id: "grad-may-2026", period: "May 2026", studentsLabel: "2,456 Students", program: "Various Programs" },
-  { id: "grad-aug-2026", period: "August 2026", studentsLabel: "1,823 Students", program: "Various Programs" },
-  { id: "grad-dec-2026", period: "December 2026", studentsLabel: "955 Students", program: "Various Programs" },
+  { id: "grad-may-2026", period: "May 2026", studentsLabel: "0 Students", program: "Various Programs" },
+  { id: "grad-aug-2026", period: "August 2026", studentsLabel: "0 Students", program: "Various Programs" },
+  { id: "grad-dec-2026", period: "December 2026", studentsLabel: "0 Students", program: "Various Programs" },
 ];
 
 // Aggregated dashboard payload consumed by the dashboard screen.

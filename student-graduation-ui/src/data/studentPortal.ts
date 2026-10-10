@@ -24,16 +24,16 @@ export const studentNotifications: StudentNotification[] = [
 /** Stat tiles at the bottom of the student dashboard. */
 export const studentDashboardStats: StudentDashboardStat[] = [
   { id: "s-cgpa", label: "Current CGPA", value: "8.5", icon: "cgpa" },
-  { id: "s-credits", label: "Completed Credits", value: "120/120", icon: "credits" },
-  { id: "s-certs", label: "Certificates", value: "1", icon: "certificates" },
+  { id: "s-credits", label: "Completed Credits", value: "0/0", icon: "credits" },
+  { id: "s-certs", label: "Certificates", value: "0", icon: "certificates" },
 ];
 
 import type { AcademicPerformanceData } from "./types";
 
 export const studentAcademicPerformance: AcademicPerformanceData = {
   overallCgpa: 8.5,
-  creditsCompleted: 120,
-  totalCredits: 120,
+  creditsCompleted: 0,
+  totalCredits: 0,
   semesters: [
     {
       semesterName: "Semester 8",

@@ -376,10 +376,11 @@ CREATE TABLE IF NOT EXISTS certify.student_graduation_details (
     student_id              UUID NOT NULL,
     registration_number     VARCHAR(100) NOT NULL,
     degree_title            VARCHAR(200) NOT NULL,
-    graduation_month        SMALLINT NOT NULL CHECK (graduation_month BETWEEN 1 AND 12),
+    graduation_month        SMALLINT CHECK (graduation_month IS NULL OR (graduation_month BETWEEN 1 AND 12)),
     graduation_year         INTEGER NOT NULL,
-    classification          VARCHAR(100) NOT NULL,
+    classification          VARCHAR(100),
     certificate_status      VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+
     created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_sgd_student FOREIGN KEY (student_id)
@@ -432,19 +433,23 @@ INSERT INTO certify.student_graduation_details
     (student_id, registration_number, degree_title,
      graduation_month, graduation_year, classification, certificate_status)
 VALUES
-    ('a1b2c3d4-e5f6-7890-abcd-ef1234567803','REG-2023-MTech-001',
-     'Master of Technology in Artificial Intelligence',6,2023,
-     'First Class with Distinction','ISSUED'),
-    ('a1b2c3d4-e5f6-7890-abcd-ef1234567805','REG-2024-BTech-001',
+    ('a1b2c3d4-e5f6-7890-abcd-ef1234567805','REG001200',
      'Bachelor of Technology in Mechanical Engineering',5,2024,
      'First Class','ISSUED'),
-    ('a1b2c3d4-e5f6-7890-abcd-ef1234567801','REG-2026-BTech-002',
+    ('a1b2c3d4-e5f6-7890-abcd-ef1234567803','REG001201',
+     'Master of Technology in Artificial Intelligence',6,2023,
+     'First Class with Distinction','ISSUED'),
+    ('a1b2c3d4-e5f6-7890-abcd-ef1234567801','REG001202',
      'Bachelor of Technology in Computer Science',6,2026,
      'First Class with Distinction','PENDING'),
-    ('a1b2c3d4-e5f6-7890-abcd-ef1234567802','REG-2026-BTech-003',
+    ('a1b2c3d4-e5f6-7890-abcd-ef1234567802','REG001203',
      'Bachelor of Technology in Electronics',6,2026,
+     'First Class','PENDING'),
+    ('a1b2c3d4-e5f6-7890-abcd-ef1234567804','REG001204',
+     'B.Sc Data Science',6,2026,
      'First Class','PENDING')
 ON CONFLICT (registration_number) DO NOTHING;
+
 
 -- Seed default admin API key (raw value: "certify-admin-key-change-me")
 INSERT INTO certify.api_keys (key_hash, name, role, active)

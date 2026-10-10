@@ -161,6 +161,19 @@ services:
       - database
       - certify
 
+  student-graduation-ui:
+    build:
+      context: ../student-graduation-ui
+      dockerfile: Dockerfile
+    container_name: student-graduation-ui
+    restart: unless-stopped
+    ports:
+      - "8086:80"
+    networks:
+      - network
+    depends_on:
+      - inji-usecase
+
 networks:
   network:
     name: mosip_network

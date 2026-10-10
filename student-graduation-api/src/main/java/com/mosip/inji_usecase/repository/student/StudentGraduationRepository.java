@@ -23,4 +23,7 @@ public interface StudentGraduationRepository extends JpaRepository<StudentGradua
     List<StudentGraduationDetail> findByCertificateStatus(String certificateStatus);
 
     boolean existsByRegistrationNumber(String registrationNumber);
+
+    @org.springframework.data.jpa.repository.Query("SELECT g.registrationNumber FROM StudentGraduationDetail g")
+    List<String> findAllRegistrationNumbers();
 }

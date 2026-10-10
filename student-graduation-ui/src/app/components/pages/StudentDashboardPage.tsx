@@ -17,28 +17,28 @@ import { StatsCard } from "@/app/components/reusable/StatsCard";
 
 function WelcomeBanner({ name, studentId }: { name: string; studentId: string }) {
   return (
-    <div className="bg-gradient-to-r from-[#263961] to-[#3d5c9d] rounded-[12px] px-[32px] py-[24px] flex items-center justify-between">
+    <div className="bg-[#425586] rounded-[12px] px-[32px] py-[24px] flex items-center justify-between">
       <div>
         <h1 className="font-['Inter:Bold',sans-serif] font-bold text-[28px] text-white leading-[36px]">
           Welcome back, {name}!
         </h1>
-        <p className="font-['Inter:Regular',sans-serif] font-normal text-[16px] text-[rgba(255,255,255,0.7)] leading-[24px] mt-[4px]">
+        <p className="font-['Inter:Regular',sans-serif] font-normal text-[16px] text-[#a9b5d2] leading-[24px] mt-[4px]">
           Student ID: {studentId}
         </p>
       </div>
       <div className="flex items-center justify-center">
         <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-          <circle cx="28" cy="28" r="27" stroke="#c5a55a" strokeWidth="2" />
+          <circle cx="28" cy="28" r="27" fill="#b48600" stroke="#b48600" strokeWidth="2" />
           <path
             d="M28 28C31.3137 28 34 25.3137 34 22C34 18.6863 31.3137 16 28 16C24.6863 16 22 18.6863 22 22C22 25.3137 24.6863 28 28 28Z"
-            stroke="#c5a55a"
+            stroke="white"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
           <path
             d="M18 40C18 35.5817 22.4772 32 28 32C33.5228 32 38 35.5817 38 40"
-            stroke="#c5a55a"
+            stroke="white"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -57,15 +57,17 @@ function ActionCard({
   subtitle,
   boldWord,
   iconBg,
+  cardBg,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
   boldWord?: string;
   iconBg: string;
+  cardBg?: string;
 }) {
   return (
-    <div className="bg-white rounded-[12px] border border-[#e5e7eb] p-[20px] flex items-center gap-[16px] cursor-pointer hover:shadow-md transition-shadow" data-name="Button">
+    <div className={`${cardBg || "bg-white"} rounded-[12px] border border-[#e5e7eb] p-[20px] flex items-center gap-[16px] cursor-pointer hover:shadow-md transition-shadow`} data-name="Button">
       <div
         className="flex items-center justify-center rounded-[10px] size-[48px] shrink-0"
         style={{ backgroundColor: iconBg }}
@@ -94,7 +96,9 @@ function ActionCard({
 function CertificateIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M22 10V15C22 15 22 15 22 15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6 13.2V17.5C6 19 9 20 12 20C15 20 18 19 18 17.5V13.2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 13L2 8L12 3L22 8L12 13Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -102,10 +106,8 @@ function CertificateIcon() {
 function GradesIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth="2" />
-      <rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth="2" />
-      <rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth="2" />
-      <rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth="2" />
+      <path d="M2 3H12V21H2V3Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 3H22V21H12V3Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -113,8 +115,8 @@ function GradesIcon() {
 function ProfileIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M12 12C14.4853 12 16.5 9.98528 16.5 7.5C16.5 5.01472 14.4853 3 12 3C9.51472 3 7.5 5.01472 7.5 7.5C7.5 9.98528 9.51472 12 12 12Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4.5 21C4.5 17.6863 7.85786 15 12 15C16.1421 15 19.5 17.6863 19.5 21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -127,19 +129,22 @@ function ActionCards() {
         title="Get My Certificate"
         subtitle="View and Download degree certificate."
         boldWord="View and Download"
-        iconBg="#3d5092"
+        iconBg="#b48600"
+        cardBg="bg-[#fdf3e1]"
       />
       <ActionCard
         icon={<GradesIcon />}
         title="View Grades"
         subtitle="Check your academic records"
+        boldWord="Check"
         iconBg="#3d5092"
       />
       <ActionCard
         icon={<ProfileIcon />}
         title="My Profile"
         subtitle="View your personal details."
-        iconBg="#3d5092"
+        boldWord="View"
+        iconBg="#1d3557"
       />
     </div>
   );
@@ -156,12 +161,12 @@ function NotificationItem({
   timeAgo: string;
   type: "success" | "info";
 }) {
-  const bgColor = type === "success" ? "bg-[#ecfdf3]" : "bg-[#eff4ff]";
-  const borderColor = type === "success" ? "border-l-[#22c55e]" : "border-l-[#3b82f6]";
+  const bgColor = type === "success" ? "bg-[#eaffed]" : "bg-[#eff4ff]";
+  const borderColor = type === "success" ? "border-[#bbf7d0]" : "border-[#3b82f6]";
   const textColor = type === "success" ? "text-[#166534]" : "text-[#1e40af]";
 
   return (
-    <div className={`${bgColor} ${borderColor} border-l-4 rounded-[8px] px-[20px] py-[14px]`}>
+    <div className={`${bgColor} ${borderColor} border rounded-[8px] px-[20px] py-[14px]`}>
       <p className={`font-['Inter:Medium',sans-serif] font-medium text-[14px] ${textColor} leading-[20px]`}>
         {message}
       </p>
@@ -198,8 +203,8 @@ function NotificationsSection({ notifications }: { notifications: { id: string; 
 function StatIconCGPA() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="#c5a55a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6.5 2H20V22H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2Z" stroke="#c5a55a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="8" r="6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M8.5 12.5L7 21L12 18L17 21L15.5 12.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -207,10 +212,8 @@ function StatIconCGPA() {
 function StatIconCredits() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="3" width="7" height="7" rx="1" stroke="#3d5092" strokeWidth="2" />
-      <rect x="14" y="3" width="7" height="7" rx="1" stroke="#3d5092" strokeWidth="2" />
-      <rect x="3" y="14" width="7" height="7" rx="1" stroke="#3d5092" strokeWidth="2" />
-      <rect x="14" y="14" width="7" height="7" rx="1" stroke="#3d5092" strokeWidth="2" />
+      <path d="M2 3H12V21H2V3Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 3H22V21H12V3Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -218,8 +221,11 @@ function StatIconCredits() {
 function StatIconCertificates() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#c5a55a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M14 2V8H20" stroke="#c5a55a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2V8H20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 13H8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 17H8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 9H8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -231,14 +237,26 @@ function StatCards({ stats }: { stats: { id: string; label: string; value: strin
     certificates: <StatIconCertificates />,
   };
 
+  const bgMap: Record<string, string> = {
+    cgpa: "bg-[#3d5092]",
+    credits: "bg-[#3d5092]",
+    certificates: "bg-[#b48600]",
+  };
+
+  const titleMap: Record<string, string> = {
+    cgpa: "Current CGPA",
+    credits: "Completed Credits",
+    certificates: "Certificates",
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]">
       {stats.map((s) => (
         <StatsCard
           key={s.id}
-          stat={{ id: s.id, label: s.label, value: s.value, caption: "" }}
+          stat={{ id: s.id, label: titleMap[s.id] || s.label, value: s.value, caption: "" }}
           icon={iconMap[s.icon] || <StatIconCGPA />}
-          iconBgColor="bg-[#fef3c7]"
+          iconBgColor={bgMap[s.icon] || "bg-[#3d5092]"}
         />
       ))}
     </div>
@@ -272,7 +290,7 @@ export default function StudentDashboardPage() {
   };
 
   return (
-    <div className="bg-[#f9fafb] min-h-screen w-full flex flex-col">
+    <div className="bg-[#e5e7eb] min-h-screen w-full flex flex-col">
       {institute && (
         <Navbar
           institute={{ ...institute, portalLabel: "Student Portal" }}
