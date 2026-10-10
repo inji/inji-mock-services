@@ -45,14 +45,15 @@ public class StudentGraduationDetail {
     @Column(name = "degree_title", nullable = false, length = 200)
     private String degreeTitle;
 
-    @Column(name = "graduation_month", nullable = false)
+    @Column(name = "graduation_month")
     private Short graduationMonth;
 
     @Column(name = "graduation_year", nullable = false)
     private Integer graduationYear;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String classification;
+
 
     @Column(name = "certificate_status", nullable = false, length = 20)
     @Builder.Default

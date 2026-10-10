@@ -14,6 +14,8 @@ public interface StudentMapper {
     @Mapping(target = "graduationDetails", ignore = true)
     Student toEntity(StudentDto dto);
 
+    @Mapping(target = "graduationDetails", ignore = true)
+    @Mapping(target = "registrationNumber", ignore = true)
     StudentDto toDto(Student entity);
 
     @Mapping(target = "id", ignore = true)

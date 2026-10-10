@@ -7,10 +7,23 @@
 import { courseOptions, academicYearOptions, newStudentDefaults } from "@/data";
 import type { Student } from "@/data/types";
 import { API_ENDPOINTS, DEFAULT_HEADERS } from "@/config/api";
+import { activityService } from "./activityService";
 
 // ---------------------------------------------------------------------------
 // Field-mapping helpers: Backend StudentDto ↔ Frontend Student
 // ---------------------------------------------------------------------------
+
+interface BackendGraduationDto {
+  id?: string;
+  studentId?: string;
+  registrationNumber?: string;
+  degreeTitle?: string;
+  graduationMonth?: number;
+  graduationYear?: number;
+  classification?: string;
+  certificateStatus?: string;
+  updatedAt?: string;
+}
 
 interface BackendStudentDto {
   id: string;
@@ -27,11 +40,17 @@ interface BackendStudentDto {
   enrollmentDate: string | null;
   guardianName: string | null;
   guardianPhone: string | null;
+  registrationNumber?: string | null;
+  graduationDetails?: BackendGraduationDto | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
 
 function mapBackendToFrontend(dto: BackendStudentDto): Student {
+  const isGraduating = Boolean(dto.academicYear && dto.academicYear.toLowerCase().includes("final"));
+
+  const regNo = dto.graduationDetails?.registrationNumber || dto.registrationNumber || undefined;
+
   return {
     id: dto.studentId,
     studentId: dto.studentId,
@@ -42,18 +61,23 @@ function mapBackendToFrontend(dto: BackendStudentDto): Student {
     year: (dto.academicYear || "First Year") as any,
     cgpa: dto.cgpa != null ? Number(dto.cgpa) : 0,
     status: (dto.status as any) || "Active",
-    graduating: false,
+    graduating: isGraduating,
     dateOfBirth: dto.dateOfBirth || undefined,
     address: dto.address || undefined,
     enrollmentDate: dto.enrollmentDate || undefined,
     guardian: dto.guardianName
       ? { name: dto.guardianName, phone: dto.guardianPhone || "" }
       : undefined,
+    graduationDetails: dto.graduationDetails || undefined,
+    registrationNumber: regNo,
+    graduationYear: dto.graduationDetails?.graduationYear ? String(dto.graduationDetails.graduationYear) : undefined,
+    createdAt: dto.createdAt || undefined,
+    updatedAt: dto.updatedAt || undefined,
   };
 }
 
 function mapFrontendToBackend(student: Partial<Student>): Record<string, unknown> {
-  return {
+  const payload: Record<string, unknown> = {
     studentId: student.studentId,
     fullName: student.fullName,
     email: student.email,
@@ -68,7 +92,15 @@ function mapFrontendToBackend(student: Partial<Student>): Record<string, unknown
     guardianName: student.guardian?.name || "N/A",
     guardianPhone: student.guardian?.phone || "N/A",
   };
+  if (student.graduationDetails) {
+    payload.graduationDetails = student.graduationDetails;
+  }
+  if (student.registrationNumber) {
+    payload.registrationNumber = student.registrationNumber;
+  }
+  return payload;
 }
+
 
 // ---------------------------------------------------------------------------
 // Service
@@ -152,6 +184,12 @@ export const studentService = {
     const created: BackendStudentDto = await response.json();
     const student = mapBackendToFrontend(created);
     studentService._lastCreatedStudent = student;
+    activityService.logActivity({
+      type: "student-registered",
+      title: "New student registered",
+      subject: student.fullName,
+      timestamp: student.createdAt || new Date().toISOString(),
+    });
     return student;
   },
 
@@ -189,7 +227,14 @@ export const studentService = {
     }
 
     const updated: BackendStudentDto = await response.json();
-    return mapBackendToFrontend(updated);
+    const result = mapBackendToFrontend(updated);
+    activityService.logActivity({
+      type: "student-updated",
+      title: "Student information updated",
+      subject: result.fullName,
+      timestamp: result.updatedAt || new Date().toISOString(),
+    });
+    return result;
   },
 
   /** Delete a student record by student ID via the backend. */
@@ -234,7 +279,14 @@ export const studentService = {
       throw new Error(`Failed to add graduation details: ${errorText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    activityService.logActivity({
+      type: "certificate-issued",
+      title: "Certificate issued",
+      subject: details.studentName || details.degreeTitle || studentId,
+      timestamp: new Date().toISOString(),
+    });
+    return data;
   },
 
   /** Get graduation details for a student. */

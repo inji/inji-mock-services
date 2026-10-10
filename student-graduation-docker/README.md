@@ -1,5 +1,11 @@
 # Inji Stack Setup
 
+> [!TIP]
+> **Just want to run the Student Graduation use-case?** Use the one-command setup in the repository root: run `docker compose up --build` from `inji-mock-services/` and open http://localhost:3000. See the [root README](../README.md) for details.
+>
+> The guide below covers the **full Inji Stack** setup (including Mimoto and Inji Web) using [docker-compose.yaml](./docker-compose.yaml) in this folder. Don't run both setups at the same time, because they use the same ports.
+
+
 This guide provides instructions for setting up and running Inji Stack for a custom use-case using an existing foundational ID system. This shows how an institution can enable it's portfolio of deparments to build upon an existing identity to accelarate independent service delivery. In the below example, we help setup some components of **Inji Stack** which uses an Authorization Service of a **National ID** deployed by MOSIP to help other depute institutions setup a use-case specific Credential Delivery for it's citizens by two independent departments one at a time such as _Agriculture_ & _Transport_. This example demonstrates the delivery of profession specific identity cards to it's citizens **Farmer Identity Card** to eligible farmers by the **Agriculture Department** or a **Mobile Driving License** to eligible drivers by the **Transport Department**. These examples can be further extended for different usecases and used with different OIDC Compatible clients.
 
 On the more technical side, this demo showcases the two types of plugin an implementor can choose to implement depending upon their usecase & requirements and can even point to another pre-existing identity system demonstrating it's adaptability to various usecases while being backed by open standards which leads to faster adoption and widespread acceptability.

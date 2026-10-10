@@ -1,148 +1,125 @@
 // ---------------------------------------------------------------------------
 // Dashboard Service
-// Computes dashboard statistics from the live backend data.
-// Stats like total students and active students are derived from real records.
-// Activity feed and upcoming graduations remain as presentational mock data
-// since the backend doesn't serve those yet.
+// Computes dashboard statistics from the live backend student records.
 // ---------------------------------------------------------------------------
 
-import { notifications } from "@/data";
-import type { DashboardStats, DashboardStat, Notification, UpcomingGraduation } from "@/data/types";
-import { API_ENDPOINTS, DEFAULT_HEADERS } from "@/config/api";
-
-interface BackendGraduationDto {
-  id: string;
-  studentId: string;
-  registrationNumber: string;
-  degreeTitle: string;
-  graduationMonth: number;
-  graduationYear: number;
-  classification: string;
-  certificateStatus: string;
-}
+import type { DashboardStats, DashboardStat, Notification, UpcomingGraduation, Student } from "@/data/types";
+import { studentService } from "./studentService";
+import { activityService, parseDate } from "./activityService";
 
 export const dashboardService = {
-  /** Fetch all dashboard data: compute stats from the real backend, keep mock activity feed. */
+  /** Fetch all dashboard data using live students list */
   async getDashboard(): Promise<DashboardStats> {
-    const stats = await dashboardService.getStatTiles();
-    const recentActivity = await dashboardService.getRecentActivity();
-    const upcomingGraduations = await dashboardService.getUpcomingGraduations();
+    const students = await studentService.getStudents();
+    const stats = dashboardService.computeStatTiles(students);
+    const recentActivity = activityService.getRecentActivities(students);
+    const upcomingGraduations = dashboardService.getUpcomingGraduations();
+
+    // Sort newly registered students by createdAt (descending)
+    const sortedStudents = [...students].sort((a, b) => {
+      const timeA = parseDate(a.createdAt)?.getTime() || 0;
+      const timeB = parseDate(b.createdAt)?.getTime() || 0;
+      return timeB - timeA;
+    });
 
     return {
       stats,
       recentActivity,
       upcomingGraduations,
-      newlyRegisteredStudentIds: [],
+      newlyRegisteredStudentIds: sortedStudents.map((s) => s.studentId),
     };
   },
 
-  /** Compute dashboard statistic tiles from real backend data. */
-  async getStatTiles(): Promise<DashboardStat[]> {
-    try {
-      // Fetch all students
-      const studentsRes = await fetch(API_ENDPOINTS.students, {
-        headers: DEFAULT_HEADERS,
-      });
-      const students = studentsRes.ok ? await studentsRes.json() : [];
+  /** Compute dashboard statistic tiles from real student records */
+  computeStatTiles(students: Student[]): DashboardStat[] {
+    const currentYear = new Date().getFullYear();
 
-      // Fetch graduation records (ISSUED status to count certificates)
-      let graduationRecords: BackendGraduationDto[] = [];
-      try {
-        const gradRes = await fetch(`${API_ENDPOINTS.graduation}/search?status=ISSUED`, {
-          headers: DEFAULT_HEADERS,
-        });
-        if (gradRes.ok) {
-          graduationRecords = await gradRes.json();
-        }
-      } catch {
-        // Graduation search endpoint may not be available — fall back gracefully
-      }
+    // 1. Total Students in backend
+    const totalStudents = students.length;
 
-      // Fetch pending graduation records
-      let pendingRecords: BackendGraduationDto[] = [];
-      try {
-        const pendingRes = await fetch(`${API_ENDPOINTS.graduation}/search?status=PENDING`, {
-          headers: DEFAULT_HEADERS,
-        });
-        if (pendingRes.ok) {
-          pendingRecords = await pendingRes.json();
-        }
-      } catch {
-        // Fall back gracefully
-      }
+    // 2. Active Students: students not graduated
+    const activeStudents = students.filter(
+      (s) => (s.status || "").toUpperCase() !== "GRADUATED"
+    ).length;
 
-      const totalStudents = students.length;
-      const activeStudents = students.filter(
-        (s: { status?: string }) => !s.status || s.status === "Active" || s.status === "ACTIVE"
-      ).length;
+    // 3. Courses Offered: distinct course programs offered
+    const distinctCourses = new Set(students.map((s) => s.course).filter(Boolean));
+    const coursesCount = distinctCourses.size;
 
-      // Unique course programs
-      const courses = new Set(students.map((s: { courseProgram?: string }) => s.courseProgram).filter(Boolean));
+    // 4. Graduating This Year: expected to graduate in currentYear or in Final Year
+    const graduatingThisYear = students.filter((s) => {
+      const yr = s.graduationDetails?.graduationYear
+        ? Number(s.graduationDetails.graduationYear)
+        : s.graduationYear
+        ? Number(s.graduationYear)
+        : null;
+      return yr === currentYear || s.year === "Final Year";
+    }).length;
 
-      // Students graduating this year — check graduation records
-      const currentYear = new Date().getFullYear();
-      const graduatingThisYear = students.filter(
-        (s: { status?: string }) => s.status === "GRADUATED" || s.status === "Graduated"
-      ).length;
+    // 5. Certificates Issued: according to graduated logic (status GRADUATED or certificate ISSUED)
+    const certificatesIssued = students.filter(
+      (s) =>
+        (s.status || "").toUpperCase() === "GRADUATED" ||
+        s.graduationDetails?.certificateStatus?.toUpperCase() === "ISSUED"
+    ).length;
 
-      const certificatesIssued = graduationRecords.length;
-      const pendingRequests = pendingRecords.length;
+    // 6. Pending Requests: final year students that are not yet issued certificates
+    const pendingRequests = students.filter((s) => {
+      const isFinalOrPending =
+        s.year === "Final Year" ||
+        s.graduationDetails?.certificateStatus?.toUpperCase() === "PENDING";
+      const isIssued =
+        (s.status || "").toUpperCase() === "GRADUATED" ||
+        s.graduationDetails?.certificateStatus?.toUpperCase() === "ISSUED";
+      return isFinalOrPending && !isIssued;
+    }).length;
 
-      return [
-        { id: "total-students", label: "Total Students", value: String(totalStudents), caption: "" },
-        { id: "active-students", label: "Active Students", value: String(activeStudents), caption: "" },
-        { id: "courses-offered", label: "Courses Offered", value: String(courses.size), caption: "" },
-        {
-          id: "graduating-this-year",
-          label: "Graduating This Year",
-          value: String(graduatingThisYear),
-          caption: `Expected in ${currentYear}`,
-        },
-        {
-          id: "certificates-issued",
-          label: "Certificates Issued",
-          value: String(certificatesIssued),
-          caption: "All-time total",
-        },
-        {
-          id: "pending-requests",
-          label: "Pending Requests",
-          value: String(pendingRequests),
-          caption: pendingRequests > 0 ? "Requires attention" : "All clear",
-        },
-      ];
-    } catch (error) {
-      console.error("Error computing dashboard stats:", error);
-      // Return zeros on error rather than crashing
-      return [
-        { id: "total-students", label: "Total Students", value: "0", caption: "Error loading" },
-        { id: "active-students", label: "Active Students", value: "0", caption: "Error loading" },
-        { id: "courses-offered", label: "Courses Offered", value: "0", caption: "" },
-        { id: "graduating-this-year", label: "Graduating This Year", value: "0", caption: "" },
-        { id: "certificates-issued", label: "Certificates Issued", value: "0", caption: "" },
-        { id: "pending-requests", label: "Pending Requests", value: "0", caption: "" },
-      ];
-    }
-  },
-
-  /** Fetch recent activity notifications (mock — backend doesn't serve activity feeds). */
-  async getRecentActivity(): Promise<Notification[]> {
-    return notifications;
-  },
-
-  /** Fetch upcoming graduation events (mock — derived from real data in the future). */
-  async getUpcomingGraduations(): Promise<UpcomingGraduation[]> {
-    // TODO: Replace with real graduation data when backend supports aggregation
     return [
-      { id: "grad-may-2026", period: "May 2026", studentsLabel: "TBD", program: "Various Programs" },
-      { id: "grad-aug-2026", period: "August 2026", studentsLabel: "TBD", program: "Various Programs" },
-      { id: "grad-dec-2026", period: "December 2026", studentsLabel: "TBD", program: "Various Programs" },
+      {
+        id: "total-students",
+        label: "Total Students",
+        value: totalStudents.toLocaleString(),
+        caption: "",
+      },
+      {
+        id: "active-students",
+        label: "Active Students",
+        value: activeStudents.toLocaleString(),
+        caption: "",
+      },
+      {
+        id: "courses-offered",
+        label: "Courses Offered",
+        value: String(coursesCount),
+        caption: "",
+      },
+      {
+        id: "graduating-this-year",
+        label: "Graduating This Year",
+        value: graduatingThisYear.toLocaleString(),
+        caption: `Expected in ${currentYear}`,
+      },
+      {
+        id: "certificates-issued",
+        label: "Certificates Issued",
+        value: certificatesIssued.toLocaleString(),
+        caption: "All-time total",
+      },
+      {
+        id: "pending-requests",
+        label: "Pending Requests",
+        value: pendingRequests.toLocaleString(),
+        caption: pendingRequests > 0 ? "Requires attention" : "All clear",
+      },
     ];
   },
 
-  /** Fetch newly registered student IDs. */
-  async getNewlyRegisteredStudentIds(): Promise<string[]> {
-    // Could be derived from sorting students by createdAt in the future
-    return [];
+  /** Fetch upcoming graduation events (0 Students as specified) */
+  getUpcomingGraduations(): UpcomingGraduation[] {
+    return [
+      { id: "grad-may-2026", period: "May 2026", studentsLabel: "0 Students", program: "Various Programs" },
+      { id: "grad-aug-2026", period: "August 2026", studentsLabel: "0 Students", program: "Various Programs" },
+      { id: "grad-dec-2026", period: "December 2026", studentsLabel: "0 Students", program: "Various Programs" },
+    ];
   },
 };

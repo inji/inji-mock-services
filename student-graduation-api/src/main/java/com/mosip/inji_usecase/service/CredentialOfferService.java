@@ -44,6 +44,16 @@ public class CredentialOfferService {
                     "Student " + studentId + " is not eligible: no graduation record found");
         }
 
+        StudentGraduationDetail gradDetail = graduations.get(0);
+        if (!"ISSUED".equalsIgnoreCase(gradDetail.getCertificateStatus()) ||
+            gradDetail.getGraduationMonth() == null ||
+            gradDetail.getClassification() == null ||
+            gradDetail.getClassification().isBlank()) {
+            throw new IllegalStateException(
+                    "Student " + studentId + " is not eligible: graduation details (graduation month and classification) have not been completed by the administration yet");
+        }
+
+
         // 3. Build the request body for Certify's /pre-authorized-data
         Map<String, Object> claims = new HashMap<>();
         claims.put("studentId", studentId);

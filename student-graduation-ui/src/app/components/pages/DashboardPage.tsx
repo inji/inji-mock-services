@@ -1,2070 +1,578 @@
-import { useState, useEffect } from "react";
-import { dashboardService, instituteService, studentService } from "@/services";
-import { institute, dashboardStatTiles, notifications, upcomingGraduations, students } from "@/data";
-import type { Institute, DashboardStats, Student } from "@/data/types";
-import svgPaths from "@/imports/EducationalInstitutePortal-2/svg-0lsypkdjn2";
+import { useState, useEffect, useMemo } from "react";
+import { dashboardService, instituteService, studentService, activityService, parseDate } from "@/services";
+import type { Institute, DashboardStats, Student, ActivityType, UpcomingGraduation } from "@/data/types";
 import imgLogo from "@/imports/EducationalInstitutePortal-2/73da5574736f6a1e3d533885140e2c14827bbc1f.png";
 
-function Heading({ institute }: { institute: Institute | null }) {
-  return (
-    <div className="h-[28px] relative shrink-0 w-[287px]" data-name="Heading 1">
-      <div className="-translate-y-full [word-break:break-word] absolute flex flex-col font-['Cinzel:Bold',sans-serif] font-bold justify-end leading-[0] left-0 text-[24px] text-black top-[30px] whitespace-nowrap">
-        <p className="leading-[32px]">{institute?.name || "University of Utopia"}</p>
-      </div>
-    </div>
-  );
-}
-
-function Paragraph({ institute }: { institute: Institute | null }) {
-  return (
-    <div className="h-[20px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Light',sans-serif] font-light leading-[20px] left-0 not-italic text-[#1c398e] text-[16px] top-0 tracking-[1px] whitespace-nowrap">{institute?.portalLabel || "Admin Portal"}</p>
-    </div>
-  );
-}
-
-function Container2({ institute }: { institute: Institute | null }) {
-  return (
-    <div className="h-[48px] relative shrink-0 w-[276px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start relative size-full">
-        <Heading institute={institute} />
-        <Paragraph institute={institute} />
-      </div>
-    </div>
-  );
-}
-
-function Container1({ institute }: { institute: Institute | null }) {
-  return (
-    <div className="h-[48px] relative shrink-0 w-[349px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[12px] items-center relative size-full">
-        <div className="h-[40px] relative shrink-0 w-[61px]" data-name="logo">
-          <img alt="" className="absolute bg-clip-padding border-0 border-[transparent] border-solid inset-0 max-w-none object-contain pointer-events-none size-full" src={imgLogo} />
-        </div>
-        <Container2 institute={institute} />
-      </div>
-    </div>
-  );
-}
-
-function Icon() {
-  return (
-    <div className="relative shrink-0 size-[20px]" data-name="Icon">
-      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 20 20">
-        <g id="Icon">
-          <path d={svgPaths.p38966ca0} id="Vector" stroke="var(--stroke-0, #364153)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-          <path d={svgPaths.p14ca9100} id="Vector_2" stroke="var(--stroke-0, #364153)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-          <path d="M17.5 10H7.5" id="Vector_3" stroke="var(--stroke-0, #364153)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Text() {
-  return (
-    <div className="flex-[1_0_0] h-[24px] min-w-px relative" data-name="Text">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="-translate-x-1/2 [word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[24px] left-[26.5px] not-italic text-[#364153] text-[16px] text-center top-[-0.5px] tracking-[-0.3125px] whitespace-nowrap">Logout</p>
-      </div>
-    </div>
-  );
-}
-
-function Button() {
-  return (
-    <div className="bg-[rgba(64,123,255,0.7)] h-[40px] relative rounded-[10px] shrink-0 w-[111.773px]" data-name="Button">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[8px] items-center px-[16px] relative size-full">
-        <Icon />
-        <Text />
-      </div>
-    </div>
-  );
-}
-
-function Container({ institute }: { institute: Institute | null }) {
-  return (
-    <div className="content-stretch flex h-[48px] items-center justify-between relative shrink-0 w-full" data-name="Container">
-      <Container1 institute={institute} />
-      <Button />
-    </div>
-  );
-}
-
+// ---------------------------------------------------------------------------
+// Header Component
+// ---------------------------------------------------------------------------
 function Header({ institute }: { institute: Institute | null }) {
-  return (
-    <div className="absolute bg-white content-stretch flex flex-col h-[81px] items-start left-0 pb-px pt-[16px] px-[64px] top-0 w-[1344px]" data-name="Header">
-      <div aria-hidden className="absolute border-[#e5e7eb] border-b border-solid inset-0 pointer-events-none" />
-      <Container institute={institute} />
-    </div>
-  );
-}
+  const handleLogout = () => {
+    window.dispatchEvent(new CustomEvent("navigate", { detail: "logout" }));
+  };
 
-function Heading1() {
   return (
-    <div className="h-[32px] relative shrink-0 w-full" data-name="Heading 2">
-      <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[32px] left-0 not-italic text-[#101828] text-[24px] top-0 tracking-[0.0703px] whitespace-nowrap">Dashboard</p>
-    </div>
-  );
-}
-
-function Paragraph1() {
-  return (
-    <div className="h-[24px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[24px] left-0 not-italic text-[#4a5565] text-[16px] top-[-0.5px] tracking-[-0.3125px] whitespace-nowrap">Manage student registrations and information.</p>
-    </div>
-  );
-}
-
-function Container3() {
-  return (
-    <div className="content-stretch flex flex-col gap-[8px] h-[64px] items-start relative shrink-0 w-full" data-name="Container">
-      <Heading1 />
-      <Paragraph1 />
-    </div>
-  );
-}
-
-function AssignmentInd() {
-  return (
-    <div className="relative shrink-0 size-[42px]" data-name="assignment_ind">
-      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 42 42">
-        <g id="assignment_ind">
-          <mask height="42" id="mask0_1_510" maskUnits="userSpaceOnUse" style={{ maskType: "alpha" }} width="42" x="0" y="0">
-            <rect fill="var(--fill-0, #D9D9D9)" height="42" id="Bounding box" width="42" />
-          </mask>
-          <g mask="url(#mask0_1_510)">
-            <path d={svgPaths.p16dc3270} fill="var(--fill-0, #155DFC)" id="assignment_ind_2" />
-          </g>
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Container6() {
-  return (
-    <div className="absolute bg-white content-stretch flex items-center left-0 p-[7px] rounded-[10px] top-0" data-name="Container">
-      <AssignmentInd />
-    </div>
-  );
-}
-
-function Container5() {
-  return (
-    <div className="absolute h-[56px] left-[24px] top-[26px] w-[73px]" data-name="Container">
-      <Container6 />
-    </div>
-  );
-}
-
-function Heading2() {
-  return (
-    <div className="absolute h-[28px] left-[116px] top-[25px] w-[406px]" data-name="Heading 3">
-      <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[28px] left-0 not-italic text-[20px] text-white top-0 tracking-[-0.4492px] whitespace-nowrap">{`Student Registry `}</p>
-    </div>
-  );
-}
-
-function Paragraph2() {
-  return <div className="absolute h-[24px] left-[116px] top-[73px] w-[1168px]" data-name="Paragraph" />;
-}
-
-function Button1() {
-  return (
-    <div className="absolute bg-[#1c398e] h-[118px] left-0 rounded-[10px] top-0 w-[600px]" data-name="Button">
-      <Container5 />
-      <Heading2 />
-      <Paragraph2 />
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[24px] left-[116px] not-italic text-[#f3e8ff] text-[16px] top-[51px] tracking-[-0.3125px] whitespace-nowrap">View and edit details for existing students.</p>
-    </div>
-  );
-}
-
-function Icon1() {
-  return (
-    <div className="h-[32px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[62.5%_33.33%_12.5%_8.33%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-7.14%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 21.3333 10.6667">
-            <path d={svgPaths.p94d2af0} id="Vector" stroke="var(--stroke-0, #155DFC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.66667" />
-          </svg>
+    <div className="w-full bg-white border-b border-[#e5e7eb] px-[64px] py-[16px] flex items-center justify-between" data-name="Header">
+      <div className="flex gap-[12px] items-center">
+        <div className="h-[40px] w-[61px] shrink-0" data-name="logo">
+          <img alt="University Logo" className="size-full object-contain pointer-events-none" src={imgLogo} />
+        </div>
+        <div className="flex flex-col">
+          <h1 className="font-['Cinzel:Bold',sans-serif] font-bold text-[24px] text-black leading-[32px]">
+            {institute?.name || "University of Utopia"}
+          </h1>
+          <p className="font-['Inter:Light',sans-serif] font-light text-[#1c398e] text-[16px] tracking-[1px] leading-[20px]">
+            {institute?.portalLabel || "Admin Portal"}
+          </p>
         </div>
       </div>
-      <div className="absolute inset-[12.5%_45.83%_54.17%_20.83%]" data-name="Vector">
-        <div className="absolute inset-[-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 13.3333 13.3333">
-            <path d={svgPaths.pc2f8c00} id="Vector" stroke="var(--stroke-0, #155DFC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.66667" />
+      <button
+        onClick={handleLogout}
+        className="bg-[rgba(64,123,255,0.7)] hover:bg-[#3b82f6] text-white h-[40px] px-[16px] rounded-[10px] flex items-center gap-[8px] transition-colors cursor-pointer"
+        data-name="Button"
+      >
+        <svg className="size-[20px]" fill="none" viewBox="0 0 20 20">
+          <path d="M7.5 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5H7.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
+          <path d="M13.3333 14.1667L17.5 10L13.3333 5.83333" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
+          <path d="M17.5 10H7.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
+        </svg>
+        <span className="font-['Inter:Medium',sans-serif] font-medium text-[16px] tracking-[-0.3125px]">
+          Logout
+        </span>
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Stat Tile Component
+// ---------------------------------------------------------------------------
+interface StatCardProps {
+  label: string;
+  value: string;
+  caption?: string;
+  captionColor?: string;
+  iconBg: string;
+  icon: React.ReactNode;
+}
+
+function StatCard({ label, value, caption, captionColor, iconBg, icon }: StatCardProps) {
+  return (
+    <div
+      className="bg-white rounded-[10px] drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] p-[24px] flex items-center justify-between w-full"
+      data-name="Container"
+    >
+      <div className="flex flex-col gap-[4px]">
+        <p className="font-['Inter:Regular',sans-serif] text-[#4a5565] text-[14px] tracking-[-0.1504px]">
+          {label}
+        </p>
+        <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[#101828] text-[30px] leading-[36px] tracking-[0.3955px]">
+          {value}
+        </p>
+        {caption ? (
+          <p className="font-['Inter:Regular',sans-serif] text-[12px] leading-[16px]" style={{ color: captionColor || "#6a7282" }}>
+            {caption}
+          </p>
+        ) : null}
+      </div>
+      <div className="rounded-[10px] size-[48px] flex items-center justify-center shrink-0" style={{ backgroundColor: iconBg }}>
+        {icon}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Activity Feed Item Component
+// ---------------------------------------------------------------------------
+function ActivityRow({ type, title, subject, timeAgo }: { type: ActivityType; title: string; subject: string; timeAgo: string }) {
+  const getIcon = () => {
+    switch (type) {
+      case "student-registered":
+        return (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="8.5" cy="7" r="4" />
+            <line x1="20" y1="8" x2="20" y2="14" />
+            <line x1="23" y1="11" x2="17" y2="11" />
           </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[33.33%_20.83%_41.67%_79.17%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-1.33px]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 2.66667 10.6667">
-            <path d="M1.33333 1.33333V9.33333" id="Vector" stroke="var(--stroke-0, #155DFC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.66667" />
+        );
+      case "certificate-issued":
+        return (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="6" />
+            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
           </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[45.83%_8.33%_54.17%_66.67%]" data-name="Vector">
-        <div className="absolute inset-[-1.33px_-16.67%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10.6667 2.66667">
-            <path d="M9.33333 1.33333H1.33333" id="Vector" stroke="var(--stroke-0, #155DFC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.66667" />
+        );
+      case "student-updated":
+        return (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
           </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container8() {
-  return (
-    <div className="absolute bg-white content-stretch flex flex-col items-start left-0 pt-[12px] px-[12px] rounded-[10px] size-[56px] top-0" data-name="Container">
-      <Icon1 />
-    </div>
-  );
-}
-
-function Container7() {
-  return (
-    <div className="absolute h-[56px] left-[24px] top-[26px] w-[73px]" data-name="Container">
-      <Container8 />
-    </div>
-  );
-}
-
-function Heading3() {
-  return (
-    <div className="absolute h-[28px] left-[116px] top-[25px] w-[406px]" data-name="Heading 3">
-      <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[28px] left-0 not-italic text-[20px] text-white top-0 tracking-[-0.4492px] whitespace-nowrap">Add New Student</p>
-    </div>
-  );
-}
-
-function Button2() {
-  return (
-    <div className="absolute bg-[#1c398e] h-[118px] left-[623px] rounded-[10px] top-0 w-[589px]" data-name="Button">
-      <Container7 />
-      <Heading3 />
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[24px] left-[116px] not-italic text-[#f3e8ff] text-[16px] top-[51px] tracking-[-0.3125px] whitespace-nowrap">Register a new student in the system</p>
-    </div>
-  );
-}
-
-function Container4() {
-  return (
-    <div className="h-[118px] relative shrink-0 w-[474px]" data-name="Container">
-      <Button1 />
-      <Button2 />
-    </div>
-  );
-}
-
-function Paragraph3() {
-  return (
-    <div className="h-[20px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{dashboardStatTiles[0].label}</p>
-    </div>
-  );
-}
-
-function Paragraph4() {
-  return (
-    <div className="content-stretch flex h-[36px] items-start relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[36px] not-italic relative shrink-0 text-[#101828] text-[30px] tracking-[0.3955px] whitespace-nowrap">{dashboardStatTiles[0].value}</p>
-    </div>
-  );
-}
-
-function Container12() {
-  return (
-    <div className="h-[60px] relative shrink-0 w-[93.188px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col gap-[4px] items-start relative size-full">
-        <Paragraph3 />
-        <Paragraph4 />
-      </div>
-    </div>
-  );
-}
-
-function Icon2() {
-  return (
-    <div className="h-[24px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[62.5%_33.33%_12.5%_8.33%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-7.14%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 8">
-            <path d={svgPaths.p11b86180} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+        );
+      case "certificate-requested":
+      default:
+        return (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
           </svg>
-        </div>
+        );
+    }
+  };
+
+  return (
+    <div className="flex items-start gap-[12px] py-[14px] border-b border-[#f3f4f6] last:border-b-0 w-full" data-name="Container">
+      <div className="bg-[#1c398e] text-white size-[32px] rounded-full flex items-center justify-center shrink-0 mt-[2px]">
+        {getIcon()}
       </div>
-      <div className="absolute inset-[12.5%_45.83%_54.17%_20.83%]" data-name="Vector">
-        <div className="absolute inset-[-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10 10">
-            <path d={svgPaths.pb08b100} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[63.04%_8.33%_12.5%_79.17%]" data-name="Vector">
-        <div className="absolute inset-[-17.04%_-33.33%_-17.04%_-33.34%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.00024 7.87024">
-            <path d={svgPaths.p19976900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[13.04%_20.8%_54.67%_66.67%]" data-name="Vector">
-        <div className="absolute inset-[-12.91%_-33.25%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.00808 9.75048">
-            <path d={svgPaths.p29500900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
+      <div className="flex flex-col gap-[2px] flex-1">
+        <p className="font-['Inter:Medium',sans-serif] font-medium text-[#101828] text-[14px] tracking-[-0.1504px] leading-[20px]">
+          {title}
+        </p>
+        <p className="font-['Inter:Regular',sans-serif] text-[#4a5565] text-[14px] tracking-[-0.1504px] leading-[20px]">
+          {subject}
+        </p>
+        <p className="font-['Inter:Regular',sans-serif] text-[#6a7282] text-[12px] leading-[16px]">
+          {timeAgo}
+        </p>
       </div>
     </div>
   );
 }
 
-function Container13() {
+// ---------------------------------------------------------------------------
+// Upcoming Graduation Card Component
+// ---------------------------------------------------------------------------
+function UpcomingGraduationCard({ item }: { item: UpcomingGraduation }) {
   return (
-    <div className="bg-[#af8010] relative rounded-[10px] shrink-0 size-[48px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pt-[12px] px-[12px] relative size-full">
-        <Icon2 />
+    <div className="bg-[#f5f9ff] rounded-[10px] p-[16px] flex flex-col gap-[8px] w-full" data-name="Container">
+      <div className="flex items-center justify-between">
+        <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[#101828] text-[16px] tracking-[-0.3125px]">
+          {item.period}
+        </p>
+        <span className="bg-[#1c398e] text-white text-[12px] font-semibold px-[12px] py-[4px] rounded-full">
+          0 Students
+        </span>
+      </div>
+      <p className="font-['Inter:Regular',sans-serif] text-[#4a5565] text-[14px] tracking-[-0.1504px]">
+        {item.program || "Various Programs"}
+      </p>
+      <div className="bg-[#e5e7eb] h-[8px] rounded-full w-full overflow-hidden mt-[4px]">
+        <div className="bg-[#1c398e] h-full rounded-full transition-all duration-300" style={{ width: "0%" }} />
       </div>
     </div>
   );
 }
 
-function Container11() {
-  return (
-    <div className="content-stretch flex h-[60px] items-center justify-between relative shrink-0 w-full" data-name="Container">
-      <Container12 />
-      <Container13 />
-    </div>
-  );
-}
-
-function Container10() {
-  return (
-    <div className="absolute bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col h-[108px] items-start left-0 pt-[24px] px-[24px] rounded-[10px] top-0 w-[389.328px]" data-name="Container">
-      <Container11 />
-    </div>
-  );
-}
-
-function Paragraph5() {
-  return (
-    <div className="h-[20px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{dashboardStatTiles[1].label}</p>
-    </div>
-  );
-}
-
-function Paragraph6() {
-  return (
-    <div className="content-stretch flex h-[36px] items-start relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[36px] not-italic relative shrink-0 text-[#101828] text-[30px] tracking-[0.3955px] whitespace-nowrap">{dashboardStatTiles[1].value}</p>
-    </div>
-  );
-}
-
-function Container16() {
-  return (
-    <div className="h-[60px] relative shrink-0 w-[101.758px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col gap-[4px] items-start relative size-full">
-        <Paragraph5 />
-        <Paragraph6 />
-      </div>
-    </div>
-  );
-}
-
-function Icon3() {
-  return (
-    <div className="h-[24px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[62.5%_33.33%_12.5%_8.33%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-7.14%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 8">
-            <path d={svgPaths.p11b86180} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[12.5%_45.83%_54.17%_20.83%]" data-name="Vector">
-        <div className="absolute inset-[-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10 10">
-            <path d={svgPaths.pb08b100} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[63.04%_8.33%_12.5%_79.17%]" data-name="Vector">
-        <div className="absolute inset-[-17.04%_-33.33%_-17.04%_-33.34%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.00024 7.87024">
-            <path d={svgPaths.p19976900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[13.04%_20.8%_54.67%_66.67%]" data-name="Vector">
-        <div className="absolute inset-[-12.91%_-33.25%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.00808 9.75048">
-            <path d={svgPaths.p29500900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container17() {
-  return (
-    <div className="bg-[#af8010] relative rounded-[10px] shrink-0 size-[48px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pt-[12px] px-[12px] relative size-full">
-        <Icon3 />
-      </div>
-    </div>
-  );
-}
-
-function Container15() {
-  return (
-    <div className="content-stretch flex h-[60px] items-center justify-between relative shrink-0 w-full" data-name="Container">
-      <Container16 />
-      <Container17 />
-    </div>
-  );
-}
-
-function Container14() {
-  return (
-    <div className="absolute bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col h-[108px] items-start left-[413.33px] pt-[24px] px-[24px] rounded-[10px] top-0 w-[389.336px]" data-name="Container">
-      <Container15 />
-    </div>
-  );
-}
-
-function Paragraph7() {
-  return (
-    <div className="h-[20px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{dashboardStatTiles[2].label}</p>
-    </div>
-  );
-}
-
-function Paragraph8() {
-  return (
-    <div className="content-stretch flex h-[36px] items-start relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] flex-[1_0_0] font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[36px] min-w-px not-italic relative text-[#101828] text-[30px] tracking-[0.3955px]">{dashboardStatTiles[2].value}</p>
-    </div>
-  );
-}
-
-function Container20() {
-  return (
-    <div className="h-[60px] relative shrink-0 w-[106.344px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col gap-[4px] items-start relative size-full">
-        <Paragraph7 />
-        <Paragraph8 />
-      </div>
-    </div>
-  );
-}
-
-function Icon4() {
-  return (
-    <div className="h-[24px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[62.5%_33.33%_12.5%_8.33%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-7.14%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 8">
-            <path d={svgPaths.p11b86180} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[12.5%_45.83%_54.17%_20.83%]" data-name="Vector">
-        <div className="absolute inset-[-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10 10">
-            <path d={svgPaths.pb08b100} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[63.04%_8.33%_12.5%_79.17%]" data-name="Vector">
-        <div className="absolute inset-[-17.04%_-33.33%_-17.04%_-33.34%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.00024 7.87024">
-            <path d={svgPaths.p19976900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[13.04%_20.8%_54.67%_66.67%]" data-name="Vector">
-        <div className="absolute inset-[-12.91%_-33.25%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.00808 9.75048">
-            <path d={svgPaths.p29500900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container21() {
-  return (
-    <div className="bg-[#1c398e] relative rounded-[10px] shrink-0 size-[48px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pt-[12px] px-[12px] relative size-full">
-        <Icon4 />
-      </div>
-    </div>
-  );
-}
-
-function Container19() {
-  return (
-    <div className="content-stretch flex h-[60px] items-center justify-between relative shrink-0 w-full" data-name="Container">
-      <Container20 />
-      <Container21 />
-    </div>
-  );
-}
-
-function Container18() {
-  return (
-    <div className="absolute bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col h-[108px] items-start left-[826.66px] pt-[24px] px-[24px] rounded-[10px] top-0 w-[389.336px]" data-name="Container">
-      <Container19 />
-    </div>
-  );
-}
-
-function Container9() {
-  return (
-    <div className="h-[108px] relative shrink-0 w-[1234px]" data-name="Container">
-      <Container10 />
-      <Container14 />
-      <Container18 />
-    </div>
-  );
-}
-
-function Paragraph9() {
-  return (
-    <div className="h-[20px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{dashboardStatTiles[3].label}</p>
-    </div>
-  );
-}
-
-function Paragraph10() {
-  return (
-    <div className="content-stretch flex h-[36px] items-start relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] flex-[1_0_0] font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[36px] min-w-px not-italic relative text-[#101828] text-[30px] tracking-[0.3955px]">{dashboardStatTiles[3].value}</p>
-    </div>
-  );
-}
-
-function Paragraph11() {
-  return (
-    <div className="h-[16px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16px] left-0 not-italic text-[#155dfc] text-[12px] top-px whitespace-nowrap">{dashboardStatTiles[3].caption}</p>
-    </div>
-  );
-}
-
-function Container25() {
-  return (
-    <div className="h-[80px] relative shrink-0 w-[135.078px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col gap-[4px] items-start relative size-full">
-        <Paragraph9 />
-        <Paragraph10 />
-        <Paragraph11 />
-      </div>
-    </div>
-  );
-}
-
-function Icon5() {
-  return (
-    <div className="h-[24px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[53.71%_29.17%_8.34%_29.18%]" data-name="Vector">
-        <div className="absolute inset-[-10.98%_-10%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 11.9968 11.1095">
-            <path d={svgPaths.p3d70580} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute bottom-[41.67%] left-1/4 right-1/4 top-[8.33%]" data-name="Vector">
-        <div className="absolute inset-[-8.33%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 14 14">
-            <path d={svgPaths.p31e16900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container26() {
-  return (
-    <div className="bg-[#d08700] relative rounded-[10px] shrink-0 size-[48px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pt-[12px] px-[12px] relative size-full">
-        <Icon5 />
-      </div>
-    </div>
-  );
-}
-
-function Container24() {
-  return (
-    <div className="content-stretch flex gap-[158.25px] h-[80px] items-center relative shrink-0" data-name="Container">
-      <Container25 />
-      <Container26 />
-    </div>
-  );
-}
-
-function Container23() {
-  return (
-    <div className="absolute bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col h-[128px] items-start left-0 pt-[24px] px-[24px] rounded-[10px] top-0 w-[389.328px]" data-name="Container">
-      <Container24 />
-    </div>
-  );
-}
-
-function Paragraph12() {
-  return (
-    <div className="h-[20px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{dashboardStatTiles[4].label}</p>
-    </div>
-  );
-}
-
-function Paragraph13() {
-  return (
-    <div className="content-stretch flex h-[36px] items-start relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[36px] not-italic relative shrink-0 text-[#101828] text-[30px] tracking-[0.3955px] whitespace-nowrap">{dashboardStatTiles[4].value}</p>
-    </div>
-  );
-}
-
-function Paragraph14() {
-  return (
-    <div className="h-[16px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16px] left-0 not-italic text-[#6a7282] text-[12px] top-px whitespace-nowrap">{dashboardStatTiles[4].caption}</p>
-    </div>
-  );
-}
-
-function Container29() {
-  return (
-    <div className="h-[80px] relative shrink-0 w-[120.539px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col gap-[4px] items-start relative size-full">
-        <Paragraph12 />
-        <Paragraph13 />
-        <Paragraph14 />
-      </div>
-    </div>
-  );
-}
-
-function Icon6() {
-  return (
-    <div className="h-[24px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[8.33%_16.67%]" data-name="Vector">
-        <div className="absolute inset-[-5%_-6.25%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 22">
-            <path d={svgPaths.p27298200} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[8.33%_16.67%_66.67%_58.33%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 8 8">
-            <path d={svgPaths.p8caa240} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[37.5%_58.33%_62.5%_33.33%]" data-name="Vector">
-        <div className="absolute inset-[-1px_-50%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 4 2">
-            <path d="M3 1H1" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[54.17%_33.33%_45.83%_33.33%]" data-name="Vector">
-        <div className="absolute inset-[-1px_-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10 2">
-            <path d="M9 1H1" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[70.83%_33.33%_29.17%_33.33%]" data-name="Vector">
-        <div className="absolute inset-[-1px_-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10 2">
-            <path d="M9 1H1" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container30() {
-  return (
-    <div className="bg-[#d08700] relative rounded-[10px] shrink-0 size-[48px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pt-[12px] px-[12px] relative size-full">
-        <Icon6 />
-      </div>
-    </div>
-  );
-}
-
-function Container28() {
-  return (
-    <div className="content-stretch flex h-[80px] items-center justify-between relative shrink-0 w-full" data-name="Container">
-      <Container29 />
-      <Container30 />
-    </div>
-  );
-}
-
-function Container27() {
-  return (
-    <div className="absolute bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col h-[128px] items-start left-[413.33px] pt-[24px] px-[24px] rounded-[10px] top-0 w-[389.336px]" data-name="Container">
-      <Container28 />
-    </div>
-  );
-}
-
-function Paragraph15() {
-  return (
-    <div className="h-[20px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{dashboardStatTiles[5].label}</p>
-    </div>
-  );
-}
-
-function Paragraph16() {
-  return (
-    <div className="content-stretch flex h-[36px] items-start relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] flex-[1_0_0] font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[36px] min-w-px not-italic relative text-[#101828] text-[30px] tracking-[0.3955px]">{dashboardStatTiles[5].value}</p>
-    </div>
-  );
-}
-
-function Paragraph17() {
-  return (
-    <div className="h-[16px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16px] left-0 not-italic text-[#e17100] text-[12px] top-px whitespace-nowrap">{dashboardStatTiles[5].caption}</p>
-    </div>
-  );
-}
-
-function Container33() {
-  return (
-    <div className="h-[80px] relative shrink-0 w-[116.32px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col gap-[4px] items-start relative size-full">
-        <Paragraph15 />
-        <Paragraph16 />
-        <Paragraph17 />
-      </div>
-    </div>
-  );
-}
-
-function Icon7() {
-  return (
-    <div className="h-[24px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[8.33%]" data-name="Vector">
-        <div className="absolute inset-[-5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 22 22">
-            <path d={svgPaths.pb60700} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute bottom-[41.67%] left-1/2 right-[33.33%] top-1/4" data-name="Vector">
-        <div className="absolute inset-[-12.5%_-25.01%_-12.5%_-25%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 6.00022 10.0002">
-            <path d="M1 1V7L5 9" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container34() {
-  return (
-    <div className="bg-[#fe9a00] relative rounded-[10px] shrink-0 size-[48px]" data-name="Container">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pt-[12px] px-[12px] relative size-full">
-        <Icon7 />
-      </div>
-    </div>
-  );
-}
-
-function Container32() {
-  return (
-    <div className="content-stretch flex h-[80px] items-center justify-between relative shrink-0 w-full" data-name="Container">
-      <Container33 />
-      <Container34 />
-    </div>
-  );
-}
-
-function Container31() {
-  return (
-    <div className="absolute bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col h-[128px] items-start left-[826.66px] pt-[24px] px-[24px] rounded-[10px] top-0 w-[389.336px]" data-name="Container">
-      <Container32 />
-    </div>
-  );
-}
-
-function Container22() {
-  return (
-    <div className="h-[128px] relative shrink-0 w-[1216px]" data-name="Container">
-      <Container23 />
-      <Container27 />
-      <Container31 />
-    </div>
-  );
-}
-
-function Icon8() {
-  return (
-    <div className="absolute left-0 size-[20px] top-[4px]" data-name="Icon">
-      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 20 20">
-        <g clipPath="url(#clip0_1_536)" id="Icon">
-          <path d={svgPaths.p14d24500} id="Vector" stroke="var(--stroke-0, #4A5565)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-          <path d="M10 5V10L13.3333 11.6667" id="Vector_2" stroke="var(--stroke-0, #4A5565)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-        </g>
-        <defs>
-          <clipPath id="clip0_1_536">
-            <rect fill="white" height="20" width="20" />
-          </clipPath>
-        </defs>
-      </svg>
-    </div>
-  );
-}
-
-function Heading4() {
-  return (
-    <div className="h-[28px] relative shrink-0 w-full" data-name="Heading 3">
-      <Icon8 />
-      <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[28px] left-[28px] not-italic text-[#101828] text-[18px] top-0 tracking-[-0.4395px] whitespace-nowrap">Recent Activity</p>
-    </div>
-  );
-}
-
-function Icon9() {
-  return (
-    <div className="h-[16px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[62.5%_33.33%_12.5%_8.33%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-7.14%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10.6667 5.33333">
-            <path d={svgPaths.p352c6500} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[12.5%_45.83%_54.17%_20.83%]" data-name="Vector">
-        <div className="absolute inset-[-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 6.66667 6.66667">
-            <path d={svgPaths.p31080000} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[33.33%_20.83%_41.67%_79.17%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-0.67px]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 1.33333 5.33333">
-            <path d="M0.666667 0.666667V4.66667" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[45.83%_8.33%_54.17%_66.67%]" data-name="Vector">
-        <div className="absolute inset-[-0.67px_-16.67%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.33333 1.33333">
-            <path d="M4.66667 0.666667H0.666667" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container39() {
-  return (
-    <div className="absolute bg-[#1c398e] content-stretch flex flex-col items-start left-0 pt-[8px] px-[8px] rounded-[16777200px] size-[32px] top-[4px]" data-name="Container">
-      <Icon9 />
-    </div>
-  );
-}
-
-function Paragraph18() {
-  return (
-    <div className="absolute h-[20px] left-0 top-0 w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-0 not-italic text-[#101828] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[0].title}</p>
-    </div>
-  );
-}
-
-function Paragraph19() {
-  return (
-    <div className="absolute h-[20px] left-0 top-[20px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[0].subject}</p>
-    </div>
-  );
-}
-
-function Paragraph20() {
-  return (
-    <div className="absolute h-[16px] left-0 top-[44px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16px] left-0 not-italic text-[#6a7282] text-[12px] top-px whitespace-nowrap">{notifications[0].timeAgo}</p>
-    </div>
-  );
-}
-
-function Container40() {
-  return (
-    <div className="absolute h-[60px] left-[44px] top-0 w-[504px]" data-name="Container">
-      <Paragraph18 />
-      <Paragraph19 />
-      <Paragraph20 />
-    </div>
-  );
-}
-
-function Container38() {
-  return (
-    <div className="h-[73px] relative shrink-0 w-full" data-name="Container">
-      <div aria-hidden className="absolute border-[#f3f4f6] border-b border-solid inset-0 pointer-events-none" />
-      <Container39 />
-      <Container40 />
-    </div>
-  );
-}
-
-function Icon10() {
-  return (
-    <div className="h-[16px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[53.71%_29.17%_8.34%_29.18%]" data-name="Vector">
-        <div className="absolute inset-[-10.98%_-10%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 7.99786 7.40633">
-            <path d={svgPaths.p319afb00} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute bottom-[41.67%] left-1/4 right-1/4 top-[8.33%]" data-name="Vector">
-        <div className="absolute inset-[-8.33%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 9.33333 9.33333">
-            <path d={svgPaths.p341ae80} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container42() {
-  return (
-    <div className="absolute bg-[#1c398e] content-stretch flex flex-col items-start left-0 pt-[8px] px-[8px] rounded-[16777200px] size-[32px] top-[4px]" data-name="Container">
-      <Icon10 />
-    </div>
-  );
-}
-
-function Paragraph21() {
-  return (
-    <div className="absolute h-[20px] left-0 top-0 w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-0 not-italic text-[#101828] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[1].title}</p>
-    </div>
-  );
-}
-
-function Paragraph22() {
-  return (
-    <div className="absolute h-[20px] left-0 top-[20px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[1].subject}</p>
-    </div>
-  );
-}
-
-function Paragraph23() {
-  return (
-    <div className="absolute h-[16px] left-0 top-[44px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16px] left-0 not-italic text-[#6a7282] text-[12px] top-px whitespace-nowrap">{notifications[1].timeAgo}</p>
-    </div>
-  );
-}
-
-function Container43() {
-  return (
-    <div className="absolute h-[60px] left-[44px] top-0 w-[504px]" data-name="Container">
-      <Paragraph21 />
-      <Paragraph22 />
-      <Paragraph23 />
-    </div>
-  );
-}
-
-function Container41() {
-  return (
-    <div className="h-[73px] relative shrink-0 w-full" data-name="Container">
-      <div aria-hidden className="absolute border-[#f3f4f6] border-b border-solid inset-0 pointer-events-none" />
-      <Container42 />
-      <Container43 />
-    </div>
-  );
-}
-
-function Icon11() {
-  return (
-    <div className="h-[16px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[8.33%_16.67%]" data-name="Vector">
-        <div className="absolute inset-[-5%_-6.25%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 12 14.6667">
-            <path d={svgPaths.p6ae9d40} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[8.33%_16.67%_66.67%_58.33%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.33333 5.33333">
-            <path d={svgPaths.p91474e0} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[37.5%_58.33%_62.5%_33.33%]" data-name="Vector">
-        <div className="absolute inset-[-0.67px_-50%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 2.66667 1.33333">
-            <path d="M2 0.666667H0.666667" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[54.17%_33.33%_45.83%_33.33%]" data-name="Vector">
-        <div className="absolute inset-[-0.67px_-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 6.66667 1.33333">
-            <path d="M6 0.666667H0.666667" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[70.83%_33.33%_29.17%_33.33%]" data-name="Vector">
-        <div className="absolute inset-[-0.67px_-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 6.66667 1.33333">
-            <path d="M6 0.666667H0.666667" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container45() {
-  return (
-    <div className="absolute bg-[#1c398e] content-stretch flex flex-col items-start left-0 pt-[8px] px-[8px] rounded-[16777200px] size-[32px] top-[4px]" data-name="Container">
-      <Icon11 />
-    </div>
-  );
-}
-
-function Paragraph24() {
-  return (
-    <div className="absolute h-[20px] left-0 top-0 w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-0 not-italic text-[#101828] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[2].title}</p>
-    </div>
-  );
-}
-
-function Paragraph25() {
-  return (
-    <div className="absolute h-[20px] left-0 top-[20px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[2].subject}</p>
-    </div>
-  );
-}
-
-function Paragraph26() {
-  return (
-    <div className="absolute h-[16px] left-0 top-[44px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16px] left-0 not-italic text-[#6a7282] text-[12px] top-px whitespace-nowrap">{notifications[2].timeAgo}</p>
-    </div>
-  );
-}
-
-function Container46() {
-  return (
-    <div className="absolute h-[60px] left-[44px] top-0 w-[504px]" data-name="Container">
-      <Paragraph24 />
-      <Paragraph25 />
-      <Paragraph26 />
-    </div>
-  );
-}
-
-function Container44() {
-  return (
-    <div className="h-[73px] relative shrink-0 w-full" data-name="Container">
-      <div aria-hidden className="absolute border-[#f3f4f6] border-b border-solid inset-0 pointer-events-none" />
-      <Container45 />
-      <Container46 />
-    </div>
-  );
-}
-
-function Icon12() {
-  return (
-    <div className="h-[16px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[8.33%]" data-name="Vector">
-        <div className="absolute inset-[-5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 14.6667 14.6667">
-            <path d={svgPaths.p3d62dd80} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute bottom-[41.67%] left-1/2 right-[33.33%] top-1/4" data-name="Vector">
-        <div className="absolute inset-[-12.5%_-25.01%_-12.5%_-25%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 4.00015 6.66681">
-            <path d={svgPaths.pf2f9980} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container48() {
-  return (
-    <div className="absolute bg-[#1c398e] content-stretch flex flex-col items-start left-0 pt-[8px] px-[8px] rounded-[16777200px] size-[32px] top-[4px]" data-name="Container">
-      <Icon12 />
-    </div>
-  );
-}
-
-function Paragraph27() {
-  return (
-    <div className="absolute h-[20px] left-0 top-0 w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-0 not-italic text-[#101828] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[3].title}</p>
-    </div>
-  );
-}
-
-function Paragraph28() {
-  return (
-    <div className="absolute h-[20px] left-0 top-[20px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[3].subject}</p>
-    </div>
-  );
-}
-
-function Paragraph29() {
-  return (
-    <div className="absolute h-[16px] left-0 top-[44px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16px] left-0 not-italic text-[#6a7282] text-[12px] top-px whitespace-nowrap">{notifications[3].timeAgo}</p>
-    </div>
-  );
-}
-
-function Container49() {
-  return (
-    <div className="absolute h-[60px] left-[44px] top-0 w-[504px]" data-name="Container">
-      <Paragraph27 />
-      <Paragraph28 />
-      <Paragraph29 />
-    </div>
-  );
-}
-
-function Container47() {
-  return (
-    <div className="h-[73px] relative shrink-0 w-full" data-name="Container">
-      <div aria-hidden className="absolute border-[#f3f4f6] border-b border-solid inset-0 pointer-events-none" />
-      <Container48 />
-      <Container49 />
-    </div>
-  );
-}
-
-function Icon13() {
-  return (
-    <div className="h-[16px] overflow-clip relative shrink-0 w-full" data-name="Icon">
-      <div className="absolute inset-[62.5%_33.33%_12.5%_8.33%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-7.14%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10.6667 5.33333">
-            <path d={svgPaths.p352c6500} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[12.5%_45.83%_54.17%_20.83%]" data-name="Vector">
-        <div className="absolute inset-[-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 6.66667 6.66667">
-            <path d={svgPaths.p31080000} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[33.33%_20.83%_41.67%_79.17%]" data-name="Vector">
-        <div className="absolute inset-[-16.67%_-0.67px]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 1.33333 5.33333">
-            <path d="M0.666667 0.666667V4.66667" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[45.83%_8.33%_54.17%_66.67%]" data-name="Vector">
-        <div className="absolute inset-[-0.67px_-16.67%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 5.33333 1.33333">
-            <path d="M4.66667 0.666667H0.666667" id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Container51() {
-  return (
-    <div className="absolute bg-[#1c398e] content-stretch flex flex-col items-start left-0 pt-[8px] px-[8px] rounded-[16777200px] size-[32px] top-[4px]" data-name="Container">
-      <Icon13 />
-    </div>
-  );
-}
-
-function Paragraph30() {
-  return (
-    <div className="absolute h-[20px] left-0 top-0 w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-0 not-italic text-[#101828] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[4].title}</p>
-    </div>
-  );
-}
-
-function Paragraph31() {
-  return (
-    <div className="absolute h-[20px] left-0 top-[20px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{notifications[4].subject}</p>
-    </div>
-  );
-}
-
-function Paragraph32() {
-  return (
-    <div className="absolute h-[16px] left-0 top-[44px] w-[504px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16px] left-0 not-italic text-[#6a7282] text-[12px] top-px whitespace-nowrap">{notifications[4].timeAgo}</p>
-    </div>
-  );
-}
-
-function Container52() {
-  return (
-    <div className="absolute h-[60px] left-[44px] top-0 w-[504px]" data-name="Container">
-      <Paragraph30 />
-      <Paragraph31 />
-      <Paragraph32 />
-    </div>
-  );
-}
-
-function Container50() {
-  return (
-    <div className="h-[60px] relative shrink-0 w-full" data-name="Container">
-      <Container51 />
-      <Container52 />
-    </div>
-  );
-}
-
-function Container37() {
-  return (
-    <div className="content-stretch flex flex-col gap-[16px] h-[416px] items-start relative shrink-0 w-full" data-name="Container">
-      <Container38 />
-      <Container41 />
-      <Container44 />
-      <Container47 />
-      <Container50 />
-    </div>
-  );
-}
-
-function Container36() {
-  return (
-    <div className="absolute bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col gap-[16px] h-[508px] items-start left-0 pt-[24px] px-[24px] rounded-[10px] top-0 w-[596px]" data-name="Container">
-      <Heading4 />
-      <Container37 />
-    </div>
-  );
-}
-
-function Icon14() {
-  return (
-    <div className="absolute left-0 size-[20px] top-[4px]" data-name="Icon">
-      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 20 20">
-        <g id="Icon">
-          <path d="M6.66667 1.66667V5" id="Vector" stroke="var(--stroke-0, #4A5565)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-          <path d="M13.3333 1.66667V5" id="Vector_2" stroke="var(--stroke-0, #4A5565)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-          <path d={svgPaths.p1da67b80} id="Vector_3" stroke="var(--stroke-0, #4A5565)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-          <path d="M2.5 8.33333H17.5" id="Vector_4" stroke="var(--stroke-0, #4A5565)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Heading5() {
-  return (
-    <div className="h-[28px] relative shrink-0 w-full" data-name="Heading 3">
-      <Icon14 />
-      <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[28px] left-[28px] not-italic text-[#101828] text-[18px] top-0 tracking-[-0.4395px] whitespace-nowrap">Upcoming Graduations</p>
-    </div>
-  );
-}
-
-function Heading6() {
-  return (
-    <div className="h-[24px] relative shrink-0 w-[75.828px]" data-name="Heading 4">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[24px] left-0 not-italic text-[#101828] text-[16px] top-[-0.5px] tracking-[-0.3125px] whitespace-nowrap">{upcomingGraduations[0].period}</p>
-      </div>
-    </div>
-  );
-}
-
-function Text1() {
-  return (
-    <div className="bg-[#1c398e] h-[24px] relative rounded-[16777200px] shrink-0 w-[108.883px]" data-name="Text">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[16px] left-[12px] not-italic text-[12px] text-white top-[5px] whitespace-nowrap">{upcomingGraduations[0].studentsLabel}</p>
-      </div>
-    </div>
-  );
-}
-
-function Container56() {
-  return (
-    <div className="absolute content-stretch flex h-[24px] items-center justify-between left-[16px] top-[16px] w-[516px]" data-name="Container">
-      <Heading6 />
-      <Text1 />
-    </div>
-  );
-}
-
-function Paragraph33() {
-  return (
-    <div className="absolute h-[20px] left-[16px] top-[48px] w-[516px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{upcomingGraduations[0].program}</p>
-    </div>
-  );
-}
-
-function Container58() {
-  return <div className="bg-[#1c398e] h-[8px] relative rounded-[16777200px] shrink-0 w-full" data-name="Container" />;
-}
-
-function Container57() {
-  return (
-    <div className="absolute bg-[#e5e7eb] content-stretch flex flex-col h-[8px] items-start left-[16px] pr-[9.086px] rounded-[16777200px] top-[80px] w-[516px]" data-name="Container">
-      <Container58 />
-    </div>
-  );
-}
-
-function Container55() {
-  return (
-    <div className="bg-[#f5f9ff] h-[104px] relative rounded-[10px] shrink-0 w-full" data-name="Container">
-      <Container56 />
-      <Paragraph33 />
-      <Container57 />
-    </div>
-  );
-}
-
-function Heading7() {
-  return (
-    <div className="h-[24px] relative shrink-0 w-[98.148px]" data-name="Heading 4">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[24px] left-0 not-italic text-[#101828] text-[16px] top-[-0.5px] tracking-[-0.3125px] whitespace-nowrap">{upcomingGraduations[1].period}</p>
-      </div>
-    </div>
-  );
-}
-
-function Text2() {
-  return (
-    <div className="bg-[#1c398e] h-[24px] relative rounded-[16777200px] shrink-0 w-[106.578px]" data-name="Text">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[16px] left-[12px] not-italic text-[12px] text-white top-[5px] whitespace-nowrap">{upcomingGraduations[1].studentsLabel}</p>
-      </div>
-    </div>
-  );
-}
-
-function Container60() {
-  return (
-    <div className="absolute content-stretch flex h-[24px] items-center justify-between left-[16px] top-[16px] w-[516px]" data-name="Container">
-      <Heading7 />
-      <Text2 />
-    </div>
-  );
-}
-
-function Paragraph34() {
-  return (
-    <div className="absolute h-[20px] left-[16px] top-[48px] w-[516px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{upcomingGraduations[1].program}</p>
-    </div>
-  );
-}
-
-function Container62() {
-  return <div className="bg-[#1c398e] h-[8px] relative rounded-[16777200px] shrink-0 w-full" data-name="Container" />;
-}
-
-function Container61() {
-  return (
-    <div className="absolute bg-[#e5e7eb] content-stretch flex flex-col h-[8px] items-start left-[16px] pr-[139.734px] rounded-[16777200px] top-[80px] w-[516px]" data-name="Container">
-      <Container62 />
-    </div>
-  );
-}
-
-function Container59() {
-  return (
-    <div className="bg-[#f5f9ff] h-[104px] relative rounded-[10px] shrink-0 w-full" data-name="Container">
-      <Container60 />
-      <Paragraph34 />
-      <Container61 />
-    </div>
-  );
-}
-
-function Heading8() {
-  return (
-    <div className="h-[24px] relative shrink-0 w-[122.633px]" data-name="Heading 4">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[24px] left-0 not-italic text-[#101828] text-[16px] top-[-0.5px] tracking-[-0.3125px] whitespace-nowrap">{upcomingGraduations[2].period}</p>
-      </div>
-    </div>
-  );
-}
-
-function Text3() {
-  return (
-    <div className="bg-[#1c398e] h-[24px] relative rounded-[16777200px] shrink-0 w-[98.414px]" data-name="Text">
-      <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[16px] left-[12px] not-italic text-[12px] text-white top-[5px] whitespace-nowrap">{upcomingGraduations[2].studentsLabel}</p>
-      </div>
-    </div>
-  );
-}
-
-function Container64() {
-  return (
-    <div className="absolute content-stretch flex h-[24px] items-center justify-between left-[16px] top-[16px] w-[516px]" data-name="Container">
-      <Heading8 />
-      <Text3 />
-    </div>
-  );
-}
-
-function Paragraph35() {
-  return (
-    <div className="absolute h-[20px] left-[16px] top-[48px] w-[516px]" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">{upcomingGraduations[2].program}</p>
-    </div>
-  );
-}
-
-function Container66() {
-  return <div className="bg-[#1c398e] h-[8px] relative rounded-[16777200px] shrink-0 w-full" data-name="Container" />;
-}
-
-function Container65() {
-  return (
-    <div className="absolute bg-[#e5e7eb] content-stretch flex flex-col h-[8px] items-start left-[16px] pr-[318.891px] rounded-[16777200px] top-[80px] w-[516px]" data-name="Container">
-      <Container66 />
-    </div>
-  );
-}
-
-function Container63() {
-  return (
-    <div className="bg-[#f5f9ff] h-[104px] relative rounded-[10px] shrink-0 w-full" data-name="Container">
-      <Container64 />
-      <Paragraph35 />
-      <Container65 />
-    </div>
-  );
-}
-
-function Container54() {
-  return (
-    <div className="content-stretch flex flex-col gap-[16px] h-[344px] items-start relative shrink-0 w-full" data-name="Container">
-      <Container55 />
-      <Container59 />
-      <Container63 />
-    </div>
-  );
-}
-
-function Container53() {
-  return (
-    <div className="absolute bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col gap-[16px] h-[508px] items-start left-[620px] pt-[24px] px-[24px] rounded-[10px] top-0 w-[596px]" data-name="Container">
-      <Heading5 />
-      <Container54 />
-    </div>
-  );
-}
-
-function Container35() {
-  return (
-    <div className="h-[508px] relative shrink-0 w-[1216px]" data-name="Container">
-      <Container36 />
-      <Container53 />
-    </div>
-  );
-}
-
-function Heading9() {
-  return (
-    <div className="h-[28px] relative shrink-0 w-full" data-name="Heading 3">
-      <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[28px] left-0 not-italic text-[#101828] text-[18px] top-0 tracking-[-0.4395px] whitespace-nowrap">Newly Registered Students</p>
-    </div>
-  );
-}
-
-function Paragraph36() {
-  return (
-    <div className="h-[20px] relative shrink-0 w-full" data-name="Paragraph">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#4a5565] text-[14px] top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">View and manage student information</p>
-    </div>
-  );
-}
-
-function Container70() {
-  return (
-    <div className="absolute content-stretch flex flex-col h-[48px] items-start left-0 top-0 w-[244.43px]" data-name="Container">
-      <Heading9 />
-      <Paragraph36 />
-    </div>
-  );
-}
-
-function TextInput() {
-  return (
-    <div className="absolute h-[42px] left-0 rounded-[10px] top-0 w-[256px]" data-name="Text Input">
-      <div className="content-stretch flex items-center overflow-clip pl-[40px] pr-[16px] py-[8px] relative rounded-[inherit] size-full">
-        <p className="[word-break:break-word] font-['Inter:Regular',sans-serif] font-normal leading-[normal] not-italic relative shrink-0 text-[16px] text-[rgba(10,10,10,0.5)] tracking-[-0.3125px] whitespace-nowrap">Search students...</p>
-      </div>
-      <div aria-hidden className="absolute border border-[#d1d5dc] border-solid inset-0 pointer-events-none rounded-[10px]" />
-    </div>
-  );
-}
-
-function Icon15() {
-  return (
-    <div className="absolute left-[12px] size-[20px] top-[11px]" data-name="Icon">
-      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 20 20">
-        <g id="Icon">
-          <path d={svgPaths.pcddfd00} id="Vector" stroke="var(--stroke-0, #99A1AF)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-          <path d="M17.5 17.5L13.9167 13.9167" id="Vector_2" stroke="var(--stroke-0, #99A1AF)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Container71() {
-  return (
-    <div className="absolute h-[42px] left-[912px] top-[3px] w-[256px]" data-name="Container">
-      <TextInput />
-      <Icon15 />
-    </div>
-  );
-}
-
-function Container69() {
-  return (
-    <div className="h-[48px] relative shrink-0 w-full" data-name="Container">
-      <Container70 />
-      <Container71 />
-    </div>
-  );
-}
-
-function Container68() {
-  return (
-    <div className="h-[81px] relative shrink-0 w-full" data-name="Container">
-      <div aria-hidden className="absolute border-[#e5e7eb] border-b border-solid inset-0 pointer-events-none" />
-      <div className="content-stretch flex flex-col items-start pb-px pt-[16px] px-[24px] relative size-full">
-        <Container69 />
-      </div>
-    </div>
-  );
-}
-
-function HeaderCell() {
-  return (
-    <div className="absolute h-[40.5px] left-0 top-0 w-[129.586px]" data-name="Header Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[24px] not-italic text-[#6a7282] text-[12px] top-[13px] tracking-[0.6px] uppercase whitespace-nowrap">Student ID</p>
-    </div>
-  );
-}
-
-function HeaderCell1() {
-  return (
-    <div className="absolute h-[40.5px] left-[129.59px] top-0 w-[149.695px]" data-name="Header Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[24px] not-italic text-[#6a7282] text-[12px] top-[13px] tracking-[0.6px] uppercase whitespace-nowrap">Name</p>
-    </div>
-  );
-}
-
-function HeaderCell2() {
-  return (
-    <div className="absolute h-[40.5px] left-[279.28px] top-0 w-[237.398px]" data-name="Header Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[24px] not-italic text-[#6a7282] text-[12px] top-[13px] tracking-[0.6px] uppercase whitespace-nowrap">Email</p>
-    </div>
-  );
-}
-
-function HeaderCell3() {
-  return (
-    <div className="absolute h-[40.5px] left-[516.68px] top-0 w-[273.602px]" data-name="Header Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[24px] not-italic text-[#6a7282] text-[12px] top-[13px] tracking-[0.6px] uppercase whitespace-nowrap">Course</p>
-    </div>
-  );
-}
-
-function HeaderCell4() {
-  return (
-    <div className="absolute h-[40.5px] left-[790.28px] top-0 w-[131.922px]" data-name="Header Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[24px] not-italic text-[#6a7282] text-[12px] top-[13px] tracking-[0.6px] uppercase whitespace-nowrap">Year</p>
-    </div>
-  );
-}
-
-function HeaderCell5() {
-  return (
-    <div className="absolute h-[40.5px] left-[922.2px] top-0 w-[85.453px]" data-name="Header Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[24px] not-italic text-[#6a7282] text-[12px] top-[13px] tracking-[0.6px] uppercase whitespace-nowrap">CGPA</p>
-    </div>
-  );
-}
-
-function HeaderCell6() {
-  return (
-    <div className="absolute h-[40.5px] left-[1007.66px] top-0 w-[106.211px]" data-name="Header Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[24px] not-italic text-[#6a7282] text-[12px] top-[13px] tracking-[0.6px] uppercase whitespace-nowrap">Status</p>
-    </div>
-  );
-}
-
-function HeaderCell7() {
-  return (
-    <div className="absolute h-[40.5px] left-[1113.87px] top-0 w-[102.133px]" data-name="Header Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[24px] not-italic text-[#6a7282] text-[12px] top-[13px] tracking-[0.6px] uppercase whitespace-nowrap">Action</p>
-    </div>
-  );
-}
-
-function TableRow() {
-  return (
-    <div className="absolute h-[40.5px] left-0 top-0 w-[1216px]" data-name="Table Row">
-      <HeaderCell />
-      <HeaderCell1 />
-      <HeaderCell2 />
-      <HeaderCell3 />
-      <HeaderCell4 />
-      <HeaderCell5 />
-      <HeaderCell6 />
-      <HeaderCell7 />
-    </div>
-  );
-}
-
-function TableHeader() {
-  return (
-    <div className="absolute bg-[#f9fafb] border-[#e5e7eb] border-b border-solid h-[40.5px] left-0 top-0 w-[1216px]" data-name="Table Header">
-      <TableRow />
-    </div>
-  );
-}
-
-function TableCell() {
-  return (
-    <div className="absolute h-[57px] left-0 top-0 w-[129.586px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[24px] not-italic text-[#101828] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[0].studentId}</p>
-    </div>
-  );
-}
-
-function TableCell1() {
-  return (
-    <div className="absolute h-[57px] left-[129.59px] top-0 w-[149.695px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#101828] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[0].fullName}</p>
-    </div>
-  );
-}
-
-function TableCell2() {
-  return (
-    <div className="absolute h-[57px] left-[279.28px] top-0 w-[237.398px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[0].email}</p>
-    </div>
-  );
-}
-
-function TableCell3() {
-  return (
-    <div className="absolute h-[57px] left-[516.68px] top-0 w-[273.602px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[0].course}</p>
-    </div>
-  );
-}
-
-function TableCell4() {
-  return (
-    <div className="absolute h-[57px] left-[790.28px] top-0 w-[131.922px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[0].year}</p>
-    </div>
-  );
-}
-
-function TableCell5() {
-  return (
-    <div className="absolute h-[57px] left-[922.2px] top-0 w-[85.453px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[0].cgpa.toFixed(1)}</p>
-    </div>
-  );
-}
-
-function Text4() {
-  return (
-    <div className="absolute bg-[#dcfce7] h-[20px] left-[24px] rounded-[16777200px] top-[20px] w-[55.977px]" data-name="Text">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[10px] not-italic text-[#016630] text-[12px] top-[3px] whitespace-nowrap">{students[0].status}</p>
-    </div>
-  );
-}
-
-function TableCell6() {
-  return (
-    <div className="absolute h-[57px] left-[1007.66px] top-0 w-[106.211px]" data-name="Table Cell">
-      <Text4 />
-    </div>
-  );
-}
-
-function Icon16() {
-  return (
-    <div className="absolute left-0 size-[16px] top-[2px]" data-name="Icon">
-      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
-        <g id="Icon">
-          <path d={svgPaths.pad05c0} id="Vector" stroke="var(--stroke-0, #9810FA)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d={svgPaths.p28db2b80} id="Vector_2" stroke="var(--stroke-0, #9810FA)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Button3() {
-  return (
-    <div className="absolute h-[20px] left-[24px] top-[18.5px] w-[51.969px]" data-name="Button">
-      <Icon16 />
-      <p className="-translate-x-1/2 [word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[36.5px] not-italic text-[#9810fa] text-[14px] text-center top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">View</p>
-    </div>
-  );
-}
-
-function TableCell7() {
-  return (
-    <div className="absolute h-[57px] left-[1113.87px] top-0 w-[102.133px]" data-name="Table Cell">
-      <Button3 />
-    </div>
-  );
-}
-
-function TableRow1() {
-  return (
-    <div className="absolute border-[#e5e7eb] border-b border-solid h-[57px] left-0 top-0 w-[1216px]" data-name="Table Row">
-      <TableCell />
-      <TableCell1 />
-      <TableCell2 />
-      <TableCell3 />
-      <TableCell4 />
-      <TableCell5 />
-      <TableCell6 />
-      <TableCell7 />
-    </div>
-  );
-}
-
-function TableCell8() {
-  return (
-    <div className="absolute h-[57px] left-0 top-0 w-[129.586px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[24px] not-italic text-[#101828] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[1].studentId}</p>
-    </div>
-  );
-}
-
-function TableCell9() {
-  return (
-    <div className="absolute h-[57px] left-[129.59px] top-0 w-[149.695px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#101828] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[1].fullName}</p>
-    </div>
-  );
-}
-
-function TableCell10() {
-  return (
-    <div className="absolute h-[57px] left-[279.28px] top-0 w-[237.398px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[1].email}</p>
-    </div>
-  );
-}
-
-function TableCell11() {
-  return (
-    <div className="absolute h-[57px] left-[516.68px] top-0 w-[273.602px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[1].course}</p>
-    </div>
-  );
-}
-
-function TableCell12() {
-  return (
-    <div className="absolute h-[57px] left-[790.28px] top-0 w-[131.922px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[1].year}</p>
-    </div>
-  );
-}
-
-function TableCell13() {
-  return (
-    <div className="absolute h-[57px] left-[922.2px] top-0 w-[85.453px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[1].cgpa.toFixed(1)}</p>
-    </div>
-  );
-}
-
-function Text5() {
-  return (
-    <div className="absolute bg-[#dcfce7] h-[20px] left-[24px] rounded-[16777200px] top-[20px] w-[55.977px]" data-name="Text">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[10px] not-italic text-[#016630] text-[12px] top-[3px] whitespace-nowrap">{students[1].status}</p>
-    </div>
-  );
-}
-
-function TableCell14() {
-  return (
-    <div className="absolute h-[57px] left-[1007.66px] top-0 w-[106.211px]" data-name="Table Cell">
-      <Text5 />
-    </div>
-  );
-}
-
-function Icon17() {
-  return (
-    <div className="absolute left-0 size-[16px] top-[2px]" data-name="Icon">
-      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
-        <g id="Icon">
-          <path d={svgPaths.pad05c0} id="Vector" stroke="var(--stroke-0, #9810FA)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d={svgPaths.p28db2b80} id="Vector_2" stroke="var(--stroke-0, #9810FA)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Button4() {
-  return (
-    <div className="absolute h-[20px] left-[24px] top-[18.5px] w-[51.969px]" data-name="Button">
-      <Icon17 />
-      <p className="-translate-x-1/2 [word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[36.5px] not-italic text-[#9810fa] text-[14px] text-center top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">View</p>
-    </div>
-  );
-}
-
-function TableCell15() {
-  return (
-    <div className="absolute h-[57px] left-[1113.87px] top-0 w-[102.133px]" data-name="Table Cell">
-      <Button4 />
-    </div>
-  );
-}
-
-function TableRow2() {
-  return (
-    <div className="absolute border-[#e5e7eb] border-b border-solid h-[57px] left-0 top-[57px] w-[1216px]" data-name="Table Row">
-      <TableCell8 />
-      <TableCell9 />
-      <TableCell10 />
-      <TableCell11 />
-      <TableCell12 />
-      <TableCell13 />
-      <TableCell14 />
-      <TableCell15 />
-    </div>
-  );
-}
-
-function TableCell16() {
-  return (
-    <div className="absolute h-[56.5px] left-0 top-0 w-[129.586px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[24px] not-italic text-[#101828] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[2].studentId}</p>
-    </div>
-  );
-}
-
-function TableCell17() {
-  return (
-    <div className="absolute h-[56.5px] left-[129.59px] top-0 w-[149.695px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#101828] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[2].fullName}</p>
-    </div>
-  );
-}
-
-function TableCell18() {
-  return (
-    <div className="absolute h-[56.5px] left-[279.28px] top-0 w-[237.398px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[2].email}</p>
-    </div>
-  );
-}
-
-function TableCell19() {
-  return (
-    <div className="absolute h-[56.5px] left-[516.68px] top-0 w-[273.602px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[2].course}</p>
-    </div>
-  );
-}
-
-function TableCell20() {
-  return (
-    <div className="absolute h-[56.5px] left-[790.28px] top-0 w-[131.922px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[2].year}</p>
-    </div>
-  );
-}
-
-function TableCell21() {
-  return (
-    <div className="absolute h-[56.5px] left-[922.2px] top-0 w-[85.453px]" data-name="Table Cell">
-      <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-[24px] not-italic text-[#4a5565] text-[14px] top-[19px] tracking-[-0.1504px] whitespace-nowrap">{students[2].cgpa.toFixed(1)}</p>
-    </div>
-  );
-}
-
-function Text6() {
-  return (
-    <div className="absolute bg-[#dcfce7] h-[20px] left-[24px] rounded-[16777200px] top-[20px] w-[55.977px]" data-name="Text">
-      <p className="[word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[16px] left-[10px] not-italic text-[#016630] text-[12px] top-[3px] whitespace-nowrap">{students[2].status}</p>
-    </div>
-  );
-}
-
-function TableCell22() {
-  return (
-    <div className="absolute h-[56.5px] left-[1007.66px] top-0 w-[106.211px]" data-name="Table Cell">
-      <Text6 />
-    </div>
-  );
-}
-
-function Icon18() {
-  return (
-    <div className="absolute left-0 size-[16px] top-[2px]" data-name="Icon">
-      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
-        <g id="Icon">
-          <path d={svgPaths.pad05c0} id="Vector" stroke="var(--stroke-0, #9810FA)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d={svgPaths.p28db2b80} id="Vector_2" stroke="var(--stroke-0, #9810FA)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-function Button5() {
-  return (
-    <div className="absolute h-[20px] left-[24px] top-[18.5px] w-[51.969px]" data-name="Button">
-      <Icon18 />
-      <p className="-translate-x-1/2 [word-break:break-word] absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[36.5px] not-italic text-[#9810fa] text-[14px] text-center top-[0.5px] tracking-[-0.1504px] whitespace-nowrap">View</p>
-    </div>
-  );
-}
-
-function TableCell23() {
-  return (
-    <div className="absolute h-[56.5px] left-[1113.87px] top-0 w-[102.133px]" data-name="Table Cell">
-      <Button5 />
-    </div>
-  );
-}
-
-function TableRow3() {
-  return (
-    <div className="absolute h-[56.5px] left-0 top-[114px] w-[1216px]" data-name="Table Row">
-      <TableCell16 />
-      <TableCell17 />
-      <TableCell18 />
-      <TableCell19 />
-      <TableCell20 />
-      <TableCell21 />
-      <TableCell22 />
-      <TableCell23 />
-    </div>
-  );
-}
-
-function TableBody() {
-  return (
-    <div className="absolute h-[170.5px] left-0 top-[40.5px] w-[1216px]" data-name="Table Body">
-      <TableRow1 />
-      <TableRow2 />
-      <TableRow3 />
-    </div>
-  );
-}
-
-function Table() {
-  return (
-    <div className="h-[211px] overflow-clip relative shrink-0 w-full" data-name="Table">
-      <TableHeader />
-      <TableBody />
-    </div>
-  );
-}
-
-function Container67() {
-  return (
-    <div className="bg-white content-stretch drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] flex flex-col h-[292px] items-start relative rounded-[10px] shrink-0 w-full" data-name="Container">
-      <Container68 />
-      <Table />
-    </div>
-  );
-}
-
-function MainContent() {
-  return (
-    <div className="absolute content-stretch flex flex-col gap-[32px] h-[1417px] items-start left-[32px] pt-[32px] px-[32px] top-[81px] w-[1280px]" data-name="Main Content">
-      <Container3 />
-      <Container4 />
-      <Container9 />
-      <Container22 />
-      <Container35 />
-      <Container67 />
-    </div>
-  );
-}
-
-function PQ({ institute, dashboardStats, students }: { institute: Institute | null; dashboardStats: DashboardStats | null; students: Student[] }) {
-  return (
-    <div className="bg-[#f9fafb] h-[1582px] relative shrink-0 w-full" data-name="pQ">
-      <Header institute={institute} />
-      <MainContent dashboardStats={dashboardStats} students={students} />
-    </div>
-  );
-}
-
-export default function EducationalInstitutePortal() {
+// ---------------------------------------------------------------------------
+// Main Dashboard Page Component
+// ---------------------------------------------------------------------------
+export default function DashboardPage() {
   const [institute, setInstitute] = useState<Institute | null>(null);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [studentsList, setStudentsList] = useState<Student[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    instituteService.getInstitute().then(setInstitute);
-    dashboardService.getDashboard().then(setDashboardStats);
-    studentService.getStudents().then(setStudentsList);
+    Promise.all([
+      instituteService.getInstitute(),
+      dashboardService.getDashboard(),
+      studentService.getStudents(),
+    ])
+      .then(([inst, stats, students]) => {
+        setInstitute(inst);
+        setDashboardStats(stats);
+        setStudentsList(students);
+      })
+      .catch((err) => {
+        console.error("Failed to load dashboard data:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
+  // Periodic refresh to keep relative times accurate as time passes
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (studentsList.length > 0) {
+        const recentActivity = activityService.getRecentActivities(studentsList);
+        setDashboardStats((prev) => (prev ? { ...prev, recentActivity } : prev));
+      }
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [studentsList]);
+
+  // Sort newly registered students by createdAt descending
+  const newlyRegisteredStudents = useMemo(() => {
+    return [...studentsList].sort((a, b) => {
+      const timeA = parseDate(a.createdAt)?.getTime() || 0;
+      const timeB = parseDate(b.createdAt)?.getTime() || 0;
+      return timeB - timeA;
+    });
+  }, [studentsList]);
+
+  // Filter newly registered students by search query
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery.trim()) return newlyRegisteredStudents.slice(0, 10);
+    const q = searchQuery.toLowerCase().trim();
+    return newlyRegisteredStudents.filter(
+      (s) =>
+        s.fullName.toLowerCase().includes(q) ||
+        s.studentId.toLowerCase().includes(q) ||
+        s.email.toLowerCase().includes(q) ||
+        s.course.toLowerCase().includes(q)
+    );
+  }, [newlyRegisteredStudents, searchQuery]);
+
+  const handleNavigate = (target: string, student?: Student) => {
+    if (student) {
+      studentService.setStudentToEdit(student);
+    }
+    window.dispatchEvent(new CustomEvent("navigate", { detail: target }));
+  };
+
+  // Stat tiles from live data
+  const statMap = useMemo(() => {
+    const map = new Map<string, { value: string; caption: string }>();
+    if (dashboardStats?.stats) {
+      for (const st of dashboardStats.stats) {
+        map.set(st.id, { value: st.value, caption: st.caption });
+      }
+    }
+    return map;
+  }, [dashboardStats]);
+
+  const currentYear = new Date().getFullYear();
+
   return (
-    <div className="bg-white content-stretch flex flex-col items-start relative size-full" data-name="Educational Institute Portal">
-      <PQ institute={institute} dashboardStats={dashboardStats} students={studentsList} />
+    <div className="bg-[#f9fafb] min-h-screen w-full flex flex-col items-center" data-name="Educational Institute Portal">
+      <Header institute={institute} />
+
+      <main className="w-full max-w-[1344px] px-[64px] py-[32px] flex flex-col gap-[32px]" data-name="Main Content">
+        {/* Title Section */}
+        <div className="flex flex-col gap-[8px]" data-name="Container">
+          <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[#101828] text-[24px] leading-[32px] tracking-[0.0703px]">
+            Dashboard
+          </h2>
+          <p className="font-['Inter:Regular',sans-serif] text-[#4a5565] text-[16px] leading-[24px] tracking-[-0.3125px]">
+            Manage student registrations and information.
+          </p>
+        </div>
+
+        {/* Quick Action Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] w-full" data-name="Container">
+          {/* Card 1: Student Registry */}
+          <div
+            onClick={() => handleNavigate("student-registry")}
+            className="bg-[#1c398e] hover:bg-[#162e73] transition-colors rounded-[10px] p-[24px] flex items-center gap-[20px] cursor-pointer shadow-md"
+            data-name="Button"
+          >
+            <div className="bg-white rounded-[10px] size-[56px] flex items-center justify-center shrink-0">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="18" height="18" rx="2" stroke="#155DFC" strokeWidth="2" />
+                <circle cx="12" cy="10" r="3" stroke="#155DFC" strokeWidth="2" />
+                <path d="M7 18c0-2.5 2.5-4 5-4s5 1.5 5 4" stroke="#155DFC" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+              <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-white text-[20px] leading-[28px] tracking-[-0.4492px]">
+                Student Registry
+              </h3>
+              <p className="font-['Inter:Medium',sans-serif] font-medium text-[#f3e8ff] text-[16px] leading-[24px] tracking-[-0.3125px]">
+                View and edit details for existing students.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: Add New Student */}
+          <div
+            onClick={() => handleNavigate("add-student")}
+            className="bg-[#1c398e] hover:bg-[#162e73] transition-colors rounded-[10px] p-[24px] flex items-center gap-[20px] cursor-pointer shadow-md"
+            data-name="Button"
+          >
+            <div className="bg-white rounded-[10px] size-[56px] flex items-center justify-center shrink-0">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#155DFC" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="8.5" cy="7" r="4" stroke="#155DFC" strokeWidth="2" />
+                <line x1="20" y1="8" x2="20" y2="14" stroke="#155DFC" strokeWidth="2" strokeLinecap="round" />
+                <line x1="23" y1="11" x2="17" y2="11" stroke="#155DFC" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+              <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-white text-[20px] leading-[28px] tracking-[-0.4492px]">
+                Add New Student
+              </h3>
+              <p className="font-['Inter:Medium',sans-serif] font-medium text-[#f3e8ff] text-[16px] leading-[24px] tracking-[-0.3125px]">
+                Register a new student in the system
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Top 3 Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] w-full" data-name="Container">
+          <StatCard
+            label="Total Students"
+            value={statMap.get("total-students")?.value || (loading ? "..." : "0")}
+            iconBg="#af8010"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            }
+          />
+          <StatCard
+            label="Active Students"
+            value={statMap.get("active-students")?.value || (loading ? "..." : "0")}
+            iconBg="#af8010"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            }
+          />
+          <StatCard
+            label="Courses Offered"
+            value={statMap.get("courses-offered")?.value || (loading ? "..." : "0")}
+            iconBg="#1c398e"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c3 3 9 3 12 0v-5" />
+              </svg>
+            }
+          />
+        </div>
+
+        {/* Bottom 3 Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] w-full" data-name="Container">
+          <StatCard
+            label="Graduating This Year"
+            value={statMap.get("graduating-this-year")?.value || (loading ? "..." : "0")}
+            caption={statMap.get("graduating-this-year")?.caption || `Expected in ${currentYear}`}
+            captionColor="#155dfc"
+            iconBg="#d08700"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+            }
+          />
+          <StatCard
+            label="Certificates Issued"
+            value={statMap.get("certificates-issued")?.value || (loading ? "..." : "0")}
+            caption={statMap.get("certificates-issued")?.caption || "All-time total"}
+            captionColor="#6a7282"
+            iconBg="#d08700"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            }
+          />
+          <StatCard
+            label="Pending Requests"
+            value={statMap.get("pending-requests")?.value || (loading ? "..." : "0")}
+            caption={statMap.get("pending-requests")?.caption || "Requires attention"}
+            captionColor="#e17900"
+            iconBg="#e17900"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            }
+          />
+        </div>
+
+        {/* Middle Section: Recent Activity & Upcoming Graduations */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] w-full" data-name="Container">
+          {/* Left: Recent Activity */}
+          <div className="bg-white rounded-[10px] drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] p-[24px] flex flex-col gap-[16px] min-h-[480px]">
+            <div className="flex items-center gap-[8px]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5565" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[#101828] text-[18px] tracking-[-0.4395px]">
+                Recent Activity
+              </h3>
+            </div>
+
+            <div className="flex flex-col">
+              {dashboardStats?.recentActivity && dashboardStats.recentActivity.length > 0 ? (
+                dashboardStats.recentActivity.map((act) => (
+                  <ActivityRow
+                    key={act.id}
+                    type={act.type}
+                    title={act.title}
+                    subject={act.subject}
+                    timeAgo={act.timeAgo}
+                  />
+                ))
+              ) : (
+                <div className="py-[32px] text-center text-[#6a7282] text-[14px]">
+                  No recent activity recorded yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Upcoming Graduations */}
+          <div className="bg-white rounded-[10px] drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] p-[24px] flex flex-col gap-[16px] min-h-[480px]">
+            <div className="flex items-center gap-[8px]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5565" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[#101828] text-[18px] tracking-[-0.4395px]">
+                Upcoming Graduations
+              </h3>
+            </div>
+
+            <div className="flex flex-col gap-[16px]">
+              {(dashboardStats?.upcomingGraduations || []).map((item) => (
+                <UpcomingGraduationCard key={item.id} item={item} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section: Newly Registered Students Table */}
+        <div className="bg-white rounded-[10px] drop-shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] overflow-hidden w-full" data-name="Container">
+          {/* Table Header Bar */}
+          <div className="p-[24px] border-b border-[#e5e7eb] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-[16px]">
+            <div className="flex flex-col">
+              <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[#101828] text-[18px] tracking-[-0.4395px]">
+                Newly Registered Students
+              </h3>
+              <p className="font-['Inter:Regular',sans-serif] text-[#4a5565] text-[14px] tracking-[-0.1504px]">
+                View and manage student information
+              </p>
+            </div>
+            {/* Search Input */}
+            <div className="relative w-full sm:w-[256px]">
+              <input
+                type="text"
+                placeholder="Search students..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-[42px] pl-[40px] pr-[16px] border border-[#d1d5dc] rounded-[10px] text-[14px] outline-none focus:border-[#155dfc] text-[#101828] placeholder:text-[#99a1af] transition-colors"
+              />
+              <div className="absolute left-[12px] top-[11px] pointer-events-none text-[#99a1af]">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="9.16667" cy="9.16667" r="6.66667" stroke="#99A1AF" strokeWidth="1.66667" />
+                  <path d="M17.5 17.5L13.9167 13.9167" stroke="#99A1AF" strokeWidth="1.66667" strokeLinecap="round" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Content */}
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f9fafb] border-b border-[#e5e7eb] text-[#6a7282] uppercase text-[12px] tracking-[0.6px] font-['Inter:Medium',sans-serif] font-medium">
+                  <th className="py-[12px] px-[24px]">Student ID</th>
+                  <th className="py-[12px] px-[24px]">Name</th>
+                  <th className="py-[12px] px-[24px]">Email</th>
+                  <th className="py-[12px] px-[24px]">Course</th>
+                  <th className="py-[12px] px-[24px]">Year</th>
+                  <th className="py-[12px] px-[24px]">CGPA</th>
+                  <th className="py-[12px] px-[24px]">Status</th>
+                  <th className="py-[12px] px-[24px]">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e5e7eb] text-[14px] font-['Inter:Regular',sans-serif]">
+                {filteredStudents.length > 0 ? (
+                  filteredStudents.map((st) => {
+                    const isGraduated = st.status?.toUpperCase() === "GRADUATED";
+                    const isActive = st.status?.toUpperCase() === "ACTIVE" || !st.status;
+
+                    return (
+                      <tr
+                        key={st.studentId}
+                        onClick={() => handleNavigate("student-detail", st)}
+                        className="hover:bg-[#f9fafb] transition-colors cursor-pointer"
+                      >
+                        <td className="py-[18px] px-[24px] font-['Inter:Medium',sans-serif] font-medium text-[#101828]">
+                          {st.studentId}
+                        </td>
+                        <td className="py-[18px] px-[24px] text-[#101828]">
+                          {st.fullName}
+                        </td>
+                        <td className="py-[18px] px-[24px] text-[#4a5565]">
+                          {st.email}
+                        </td>
+                        <td className="py-[18px] px-[24px] text-[#4a5565] max-w-[240px] truncate">
+                          {st.course}
+                        </td>
+                        <td className="py-[18px] px-[24px] text-[#4a5565]">
+                          {st.year}
+                        </td>
+                        <td className="py-[18px] px-[24px] text-[#4a5565]">
+                          {typeof st.cgpa === "number" ? st.cgpa.toFixed(1) : "0.0"}
+                        </td>
+                        <td className="py-[18px] px-[24px]">
+                          <span
+                            className={`inline-flex items-center px-[10px] py-[2px] rounded-full text-[12px] font-['Inter:Medium',sans-serif] font-medium ${
+                              isGraduated
+                                ? "bg-[#dbeafe] text-[#1d4ed8]"
+                                : isActive
+                                ? "bg-[#dcfce7] text-[#016630]"
+                                : "bg-[#f3f4f6] text-[#4a5565]"
+                            }`}
+                          >
+                            {st.status || "Active"}
+                          </span>
+                        </td>
+                        <td className="py-[18px] px-[24px]">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNavigate("student-detail", st);
+                            }}
+                            className="inline-flex items-center gap-[6px] text-[#9810fa] hover:text-[#7e02d6] font-['Inter:Medium',sans-serif] font-medium text-[14px] transition-colors cursor-pointer"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M1.37467 8.232C1.31911 8.08232 1.31911 7.91768 1.37467 7.768C1.9158 6.4559 2.83434 5.33403 4.01385 4.5446C5.19335 3.75517 6.5807 3.33374 8 3.33374C9.4193 3.33374 10.8066 3.75517 11.9862 4.5446C13.1657 5.33403 14.0842 6.4559 14.6253 7.768C14.6809 7.91768 14.6809 8.08232 14.6253 8.232C14.0842 9.5441 13.1657 10.666 11.9862 11.4554C10.8066 12.2448 9.4193 12.6663 8 12.6663C6.5807 12.6663 5.19335 12.2448 4.01385 11.4554C2.83434 10.666 1.9158 9.5441 1.37467 8.232Z" stroke="#9810FA" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
+                              <circle cx="8" cy="8" r="2" stroke="#9810FA" strokeWidth="1.33333" />
+                            </svg>
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="py-[36px] text-center text-[#6a7282]">
+                      {loading ? "Loading students..." : "No students found matching your search."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

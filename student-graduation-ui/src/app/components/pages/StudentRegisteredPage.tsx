@@ -167,42 +167,99 @@ export default function EducationalInstitutePortal() {
       <div className="absolute left-[256px] top-[145px] w-[832px] bg-white rounded-[16px] border border-[#e5e7eb] p-[32px] shadow-sm flex flex-col gap-[32px]">
         <Container3 />
 
-        <div className="mt-[160px] flex flex-col gap-[20px] bg-[#fffbeb] border border-[#fde68a] p-[24px] rounded-[12px]">
+        <div className="mt-[160px] flex flex-col gap-[20px] bg-[#fffbeb] p-[24px] rounded-[12px]">
           <h3 className="font-semibold text-[20px] text-[#101828]">Student Details</h3>
-          <div className="grid grid-cols-2 gap-[16px] text-[14px]">
+          <div className="grid grid-cols-2 gap-[24px] text-[14px]">
             <div>
-              <p className="text-[#6e4f06]">Student ID</p>
+              <p className="text-[#6e4f06] mb-1">Student ID</p>
               <p className="font-semibold text-black text-[16px]">{student?.studentId || "N/A"}</p>
             </div>
             <div>
-              <p className="text-[#6e4f06]">Full Name</p>
+              <p className="text-[#6e4f06] mb-1">Full Name</p>
               <p className="font-semibold text-black text-[16px]">{student?.fullName || "N/A"}</p>
             </div>
             <div>
-              <p className="text-[#6e4f06]">Email</p>
-              <p className="font-medium text-black text-[16px]">{student?.email || "N/A"}</p>
+              <p className="text-[#6e4f06] mb-1">Email</p>
+              <p className="font-medium text-black text-[16px] flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                {student?.email || "N/A"}
+              </p>
             </div>
             <div>
-              <p className="text-[#6e4f06]">Phone</p>
-              <p className="font-medium text-black text-[16px]">{student?.phone || "N/A"}</p>
+              <p className="text-[#6e4f06] mb-1">Phone</p>
+              <p className="font-medium text-black text-[16px] flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                {student?.phone || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[#6e4f06] mb-1">Course</p>
+              <p className="font-semibold text-black text-[16px]">{student?.course || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-[#6e4f06] mb-1">Academic Year</p>
+              <p className="font-semibold text-black text-[16px]">{student?.year || "N/A"}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex gap-[16px] justify-center">
+        <div className="flex flex-col gap-[20px] bg-[#f0f6ff] border border-[#dbeafe] p-[24px] rounded-[12px]">
+          <h3 className="font-semibold text-[20px] text-[#1e3a8a]">Degree Certificate Details</h3>
+          <div className="grid grid-cols-2 gap-[24px] text-[14px]">
+            <div>
+              <p className="text-[#3b82f6] mb-1">Registration Number</p>
+              <p className="font-semibold text-[#1e3a8a] text-[16px]">
+                {student?.graduationDetails?.registrationNumber || student?.registrationNumber || "REG001200"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[#3b82f6] mb-1">Degree Title</p>
+              <p className="font-semibold text-[#1e3a8a] text-[16px]">
+                {student?.graduationDetails?.degreeTitle || student?.course || "Bachelor of computer science"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[#3b82f6] mb-1">Graduation Date</p>
+              <p className="font-semibold text-[#1e3a8a] text-[16px]">
+                {(() => {
+                  const m = student?.graduationDetails?.graduationMonth;
+                  const monthName = m ? ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m - 1] : "May";
+                  const yr = student?.graduationDetails?.graduationYear || student?.graduationYear || "2026";
+                  return `${monthName} ${yr}`;
+                })()}
+              </p>
+            </div>
+            <div>
+              <p className="text-[#3b82f6] mb-1">Semesters</p>
+              <p className="font-semibold text-[#1e3a8a] text-[16px]">8</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-[8px] bg-[#fafafa] border border-[#e5e7eb] p-[20px] rounded-[12px] text-[14px]">
+          <p className="text-[#4b5563]"><strong className="text-[#111827] font-semibold">Student Login ID:</strong> {student?.studentId || "STUD12345678"}</p>
+          <p className="text-[#6b7280]">A temporary password has been sent to the student's email address</p>
+        </div>
+
+        <div className="flex gap-[16px] justify-between">
           <button
-            className="px-[24px] py-[12px] bg-[#3d5092] hover:bg-[#2b3c73] text-white rounded-[10px] text-[16px] font-medium transition-colors"
+            onClick={() => window.dispatchEvent(new CustomEvent("navigate", { detail: "dashboard" }))}
+            className="px-[24px] flex-1 py-[12px] bg-black hover:bg-gray-800 text-white rounded-[10px] text-[16px] font-medium transition-colors cursor-pointer"
             data-name="Button"
           >
             Back to Dashboard
           </button>
           <button
-            className="px-[24px] py-[12px] border border-[#3d5092] text-[#3d5092] hover:bg-gray-50 rounded-[10px] text-[16px] font-medium transition-colors"
+            onClick={() => window.dispatchEvent(new CustomEvent("navigate", { detail: "add-student" }))}
+            className="px-[24px] flex-1 py-[12px] border border-black text-black flex items-center justify-center gap-2 hover:bg-gray-50 rounded-[10px] text-[16px] font-medium transition-colors cursor-pointer"
             data-name="Button"
           >
             Add Another Student
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </button>
         </div>
+
       </div>
     </div>
   );

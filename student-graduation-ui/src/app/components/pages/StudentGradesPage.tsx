@@ -5,9 +5,6 @@ import { authService } from "@/services/authService";
 import type { Institute, AcademicPerformanceData, SemesterRecord, CourseGrade } from "@/data/types";
 import imgLogo from "@/imports/EducationalInstitutePortal-1/73da5574736f6a1e3d533885140e2c14827bbc1f.png";
 import { Navbar } from "@/app/components/reusable/Navbar";
-import { StatsCard } from "@/app/components/reusable/StatsCard";
-
-// --- Back Link ---
 
 function BackLink() {
   return (
@@ -28,95 +25,21 @@ function BackLink() {
 
 // --- Icons ---
 
-function StatIconCGPA() {
+function RibbonIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="#c5a55a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6.5 2H20V22H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2Z" stroke="#c5a55a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-white">
+      <circle cx="12" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M8.5 12.5L7 21L12 18L17 21L15.5 12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
 
-function StatIconTrend() {
+function TrendUpIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M23 6L13.5 15.5L8.5 10.5L1 18" stroke="#3d5092" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M17 6H23V12" stroke="#3d5092" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-[#101828]">
+      <path d="M23 6L13.5 15.5L8.5 10.5L1 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 6H23V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
-}
-
-// --- Semester Table ---
-
-function SemesterTable({ record }: { record: SemesterRecord }) {
-  return (
-    <div className="mb-[40px]">
-      <div className="flex items-center justify-between mb-[16px]">
-        <div>
-          <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-[#101828] leading-[24px]">
-            {record.semesterName}
-          </h2>
-          <p className="font-['Inter:Regular',sans-serif] font-normal text-[12px] text-[#6b7280] leading-[18px]">
-            {record.year}
-          </p>
-        </div>
-        <div className="bg-[#eff4ff] text-[#1e40af] font-['Inter:Medium',sans-serif] font-medium text-[14px] px-[12px] py-[4px] rounded-[16px]">
-          Semester GPA: {record.semesterGpa.toFixed(1)}
-        </div>
-      </div>
-
-      <div className="border border-[#e5e7eb] rounded-[8px] overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-              <th className="px-[24px] py-[12px] font-['Inter:Medium',sans-serif] font-medium text-[12px] text-[#6b7280] uppercase tracking-wider">
-                Course Code
-              </th>
-              <th className="px-[24px] py-[12px] font-['Inter:Medium',sans-serif] font-medium text-[12px] text-[#6b7280] uppercase tracking-wider">
-                Course Name
-              </th>
-              <th className="px-[24px] py-[12px] font-['Inter:Medium',sans-serif] font-medium text-[12px] text-[#6b7280] uppercase tracking-wider">
-                Credits
-              </th>
-              <th className="px-[24px] py-[12px] font-['Inter:Medium',sans-serif] font-medium text-[12px] text-[#6b7280] uppercase tracking-wider">
-                Grade
-              </th>
-              <th className="px-[24px] py-[12px] font-['Inter:Medium',sans-serif] font-medium text-[12px] text-[#6b7280] uppercase tracking-wider">
-                Points
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-[#e5e7eb]">
-            {record.courses.map((course, idx) => (
-              <tr key={idx} className="hover:bg-[#f9fafb] transition-colors">
-                <td className="px-[24px] py-[16px] font-['Inter:Medium',sans-serif] font-medium text-[14px] text-[#101828] whitespace-nowrap">
-                  {course.code}
-                </td>
-                <td className="px-[24px] py-[16px] font-['Inter:Regular',sans-serif] font-normal text-[14px] text-[#4a5565] whitespace-nowrap">
-                  {course.name}
-                </td>
-                <td className="px-[24px] py-[16px] font-['Inter:Regular',sans-serif] font-normal text-[14px] text-[#4a5565] whitespace-nowrap">
-                  {course.credits}
-                </td>
-                <td className="px-[24px] py-[16px] whitespace-nowrap">
-                  <span className={`inline-flex items-center px-[8px] py-[2px] rounded-[12px] text-[12px] font-medium ${
-                    course.grade.startsWith('A') ? 'bg-[#d1fae5] text-[#065f46]' :
-                    course.grade.startsWith('B') ? 'bg-[#dbeafe] text-[#1e40af]' :
-                    course.grade.startsWith('C') ? 'bg-[#fef3c7] text-[#92400e]' :
-                    'bg-[#fee2e2] text-[#991b1b]'
-                  }`}>
-                    {course.grade}
-                  </span>
-                </td>
-                <td className="px-[24px] py-[16px] font-['Inter:Regular',sans-serif] font-normal text-[14px] text-[#4a5565] whitespace-nowrap">
-                  {course.points.toFixed(1)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
   );
 }
 
@@ -145,7 +68,7 @@ export default function StudentGradesPage() {
   };
 
   return (
-    <div className="bg-[#f9fafb] min-h-screen w-full flex flex-col">
+    <div className="bg-[#e5e7eb] min-h-screen w-full flex flex-col">
       {institute && (
         <Navbar
           institute={{ ...institute, portalLabel: "Student Portal" }}
@@ -166,33 +89,32 @@ export default function StudentGradesPage() {
           {/* Highlights */}
           {data && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mb-[40px]">
-              <StatsCard
-                stat={{
-                  id: "cgpa",
-                  label: "Overall CGPA",
-                  value: data.overallCgpa.toFixed(1),
-                  caption: ""
-                }}
-                icon={<StatIconCGPA />}
-                iconBgColor="bg-[#fef3c7]"
-              />
-              <StatsCard
-                stat={{
-                  id: "credits",
-                  label: "Credits Completed",
-                  value: `${data.creditsCompleted}/${data.totalCredits}`,
-                  caption: ""
-                }}
-                icon={<StatIconTrend />}
-                iconBgColor="bg-[#eff4ff]"
-              />
+              <div className="bg-[#263961] rounded-[12px] p-[32px] flex items-center justify-between">
+                <div>
+                  <p className="font-['Inter:Regular',sans-serif] font-normal text-[14px] text-[rgba(255,255,255,0.7)] leading-[20px] mb-[8px]">
+                    Overall CGPA
+                  </p>
+                  <p className="font-['Inter:Bold',sans-serif] font-bold text-[40px] text-white leading-[48px]">
+                    {data.overallCgpa.toFixed(1)}
+                  </p>
+                </div>
+                <RibbonIcon />
+              </div>
+              
+              <div className="bg-[#bfdbfe] rounded-[12px] p-[32px] flex items-center justify-between">
+                <div>
+                  <p className="font-['Inter:Regular',sans-serif] font-normal text-[14px] text-[#4a5565] leading-[20px] mb-[8px]">
+                    Credits Completed
+                  </p>
+                  <p className="font-['Inter:Bold',sans-serif] font-bold text-[40px] text-[#101828] leading-[48px]">
+                    {data.creditsCompleted}/{data.totalCredits}
+                  </p>
+                </div>
+                <TrendUpIcon />
+              </div>
             </div>
           )}
 
-          {/* Semester Tables */}
-          {data?.semesters.map((semester, idx) => (
-            <SemesterTable key={idx} record={semester} />
-          ))}
         </div>
         </div>
       </div>
