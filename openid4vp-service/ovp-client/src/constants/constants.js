@@ -2,7 +2,8 @@
 export const CLIENT_ID_PREFIXES = {
     PRE_REGISTERED: "pre-registered",
     REDIRECT_URI: "redirect_uri",
-    DID: "did"
+    DID: "did",
+    X509_HASH: "x509_hash"
 }
 
 // enum for spec versions
@@ -22,6 +23,12 @@ export const REQUEST_MODES = {
 export const RESPONSE_MODES = {
     DIRECT_POST: "direct_post",
     DIRECT_POST_JWT: "direct_post.jwt"
+}
+
+// enum for the algorithm a request object is signed with
+export const SIGNING_ALGORITHMS = {
+    EDDSA: "EdDSA",
+    ES256: "ES256"
 }
 
 // enum for support types

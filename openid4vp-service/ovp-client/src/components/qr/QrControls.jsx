@@ -20,9 +20,14 @@ export default function QrControls({
     selectedSpec,
     selectedResponseMode,
     isRequestSigned,
+    specVersions = Object.values(SPEC_VERSIONS),
+    isSigningOptional = true,
+    signingAlgs = [],
+    selectedSigningAlg,
     onRequestModeChange,
     onSpecVersionChange,
     onResponseModeChange,
+    onSigningAlgChange,
     onSignedChange,
     onOpenPresentationDetails,
 }) {
@@ -33,7 +38,7 @@ export default function QrControls({
         {name: 'By Reference', selected: isByReference, onChange: () => onRequestModeChange(REQUEST_MODES.BY_REFERENCE)},
     ];
 
-    const specOptions = Object.values(SPEC_VERSIONS).map((v) => ({
+    const specOptions = specVersions.map((v) => ({
         name: v,
         selected: selectedSpec === v,
         onChange: () => onSpecVersionChange(v),
@@ -43,6 +48,12 @@ export default function QrControls({
         name: m,
         selected: selectedResponseMode === m,
         onChange: () => onResponseModeChange(m),
+    }));
+
+    const signingAlgOptions = signingAlgs.map((a) => ({
+        name: a,
+        selected: selectedSigningAlg === a,
+        onChange: () => onSigningAlgChange(a),
     }));
 
     return (
@@ -93,7 +104,7 @@ export default function QrControls({
                         </div>
                     </div>
 
-                    {isByValue && (
+                    {isByValue && isSigningOptional && (
                         <label style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -138,6 +149,13 @@ export default function QrControls({
                         </label>
                     )}
 
+                    {signingAlgs.length > 0 && (isByReference || isRequestSigned) && (
+                        <div style={{marginBottom: spacing.lg}}>
+                            <label style={fieldLabelStyle}>Request Signing Algorithm</label>
+                            <Dropdown options={signingAlgOptions} fullWidth light/>
+                        </div>
+                    )}
+
                     <Button onClick={onOpenPresentationDetails} variant={'tertiary'} style={{marginTop: 10}}>
                         Edit Presentation Request Details
                     </Button>
@@ -153,9 +171,14 @@ QrControls.propTypes = {
     selectedSpec: PropTypes.string.isRequired,
     selectedResponseMode: PropTypes.string.isRequired,
     isRequestSigned: PropTypes.bool.isRequired,
+    specVersions: PropTypes.arrayOf(PropTypes.string),
+    isSigningOptional: PropTypes.bool,
+    signingAlgs: PropTypes.arrayOf(PropTypes.string),
+    selectedSigningAlg: PropTypes.string,
     onRequestModeChange: PropTypes.func.isRequired,
     onSpecVersionChange: PropTypes.func.isRequired,
     onResponseModeChange: PropTypes.func.isRequired,
+    onSigningAlgChange: PropTypes.func,
     onSignedChange: PropTypes.func.isRequired,
     onOpenPresentationDetails: PropTypes.func.isRequired,
 };
