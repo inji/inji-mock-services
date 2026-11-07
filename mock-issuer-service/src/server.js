@@ -18,6 +18,7 @@ import nonceHandler from "./nonce.js";
 import { getDidDocument } from "./credential/ldp-vc.js";
 import { ISSUER } from "./issuer-profile.js";
 import { jwtVcIssuerMetadata } from "./credential/issuer-signing-key.js";
+import { mdocIssuerCertificate } from "./credential/mdoc-signing-key.js";
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
@@ -38,6 +39,7 @@ app.get("/.well-known/did.json", (req, res) => {
   res.json(getDidDocument(issuerDid));
 });
 app.get("/.well-known/jwt-vc-issuer", jwtVcIssuerMetadata);
+app.get("/mdoc/iaca.pem", (req, res, next) => mdocIssuerCertificate(req, res).catch(next));
 app.get("/.well-known/openid-credential-issuer", issuerMetadata);
 app.get("/:flow(pdi)/.well-known/openid-credential-issuer", issuerMetadata);
 app.get("/:version(v1|draft13)/.well-known/openid-credential-issuer", issuerMetadata);

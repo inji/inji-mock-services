@@ -603,6 +603,7 @@ function renderPage(options, pin = null, configError = null, jsonFieldText = {})
                 ${optionButton("credential", "employee", options.credential, "Employee credential", "JWT VC")}
                 ${optionButton("credential", "sd-jwt", options.credential, "SD-JWT Employee", "Selective Disclosure")}
                 ${optionButton("credential", "mdoc", options.credential, "Mobile DL", "ISO 18013-5 mdoc")}
+                ${optionButton("credential", "photo-id", options.credential, "Photo ID", "Photo ID mdoc")}
               </div>
             </div>
           </form>

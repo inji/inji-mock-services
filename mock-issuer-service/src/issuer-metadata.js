@@ -5,8 +5,29 @@ import {
   issuerBaseUrl,
   resolveRequestVersion,
 } from "./issuer-profile.js";
+import { PHOTO_ID_DOCTYPE, photoIdClaims } from "./credential/photo-id.js";
 
 const BASE_CREDENTIAL_CONFIGURATIONS = {
+  PhotoIdVerifiableCredential: {
+    format: "mso_mdoc",
+    scope: "photoid.read",
+    doctype: PHOTO_ID_DOCTYPE,
+    cryptographic_binding_methods_supported: ["jwk"],
+    credential_signing_alg_values_supported: ["ES256"],
+    proof_types_supported: { jwt: { proof_signing_alg_values_supported: ["ES256"] } },
+    credential_metadata: {
+      display: [{ name: "Photo ID", locale: "en", logo: {
+        uri: "https://inji.github.io/inji-config/logos/mosipid-logo.png",
+        alt_text: "MOSIP logo",
+      } }],
+      claims: Object.entries(photoIdClaims()).flatMap(([namespace, claims]) =>
+        Object.keys(claims).map(name => ({
+          path: [namespace, name],
+          display: [{ name: name.replaceAll("_", " "), locale: "en" }],
+        })),
+      ),
+    },
+  },
   FarmerCredential: {
     format: "ldp_vc",
     scope: "degree.read",

@@ -535,3 +535,36 @@ logs and the wallet's success/error screen.
 
 
 MIT
+## Photo ID mdoc for multi-document tests
+
+Select **Photo ID** on `/qr`, or open:
+
+```
+/qr?credential=photo-id&version=v1&flow=pre-auth
+```
+
+Use `version=draft13` for the draft 13 issuance flow. The configuration ID is
+`PhotoIdVerifiableCredential`, scope `photoid.read`, format `mso_mdoc`, and the
+case-sensitive docType is `org.iso.23220.photoid.1`. This matches the Multipaz
+Identity Reader APK used for the proximity tests. Core identity claims are in
+`org.iso.23220.1`; Photo ID-specific claims are in `org.iso.23220.photoid.1`.
+
+The credential includes a public sample portrait, names, birth date, age-over-18
+and age-over-21 flags, document details, and residence fields. It is issued with a
+fresh one-year validity period and the P-256 holder public key from the wallet's
+signed proof. JWT proofs with either a `jwk` header or `did:jwk` key reference
+are accepted. The existing fixed Mobile DL sample is unchanged; for multi-doc
+proximity testing, use this Photo ID alongside a valid mDL already in the wallet.
+
+The new Photo ID uses an ephemeral mock IACA and document signer, generated once
+per service process using OpenSSL. To trust it in a reader, download
+`/mdoc/iaca.pem` from the running issuer and import it into the reader's trusted
+issuers. Restarting the issuer regenerates this test identity, so newly issued
+Photo IDs then require the new root. This is test-only issuer material.
+
+Run `npm test` to check both metadata/offer versions, wallet holder binding,
+issuer certificate/signature, every MSO claim digest, and the original mDL response.
+
+The sample portrait `assets/erika-mustermann.jpg` is from OWF Multipaz:
+https://github.com/openwallet-foundation/multipaz/blob/main/multipaz-facenet-test-data/testfaces/erika_mustermann.jpg
+Its Apache-2.0 license is included as `assets/LICENSE-multipaz`.
