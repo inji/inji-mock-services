@@ -91,7 +91,6 @@ export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespace
 
   const msoCbor = standardCbor.encode(new cbor.Tag(standardCbor.encode(mso), 24));
   
-  // Sign MSO with COSE
   const signer = {
     key: {
       d: Buffer.from(privateKeyJwk.d, 'base64url'),
@@ -100,10 +99,6 @@ export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespace
     }
   };
   
-  // For COSE_Sign1:
-  // headers.p contains protected headers
-  // headers.u contains unprotected headers
-  // signers is a single signer object
   const headers = {
     p: { alg: 'ES256' },
     u: issuerCertificate ? { x5chain: issuerCertificate } : { kid: privateKeyJwk.kid }

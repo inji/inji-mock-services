@@ -25,9 +25,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
-
-
-
 // ---- QR CODE ---- //
 app.get("/qr", qrPageHandler);
 app.get("/qr/image", qrImageHandler);
@@ -44,7 +41,6 @@ app.get("/.well-known/openid-credential-issuer", issuerMetadata);
 app.get("/:flow(pdi)/.well-known/openid-credential-issuer", issuerMetadata);
 app.get("/:version(v1|draft13)/.well-known/openid-credential-issuer", issuerMetadata);
 app.get("/:version(v1|draft13)/:flow(pdi)/.well-known/openid-credential-issuer", issuerMetadata);
-
 
 // ------------------------------
 // AUTHORIZATION SERVER METADATA
@@ -72,9 +68,7 @@ app.get(
 
 app.get("/credential-offer", credentialOfferHandler);
 
-
 // ---- AUTHORIZATION SERVER ---- //
-// app.get("/as/authorize", authorizeHandler);
 app.post("/as/interactive-authorization", interactiveAuthorizationHandler);
 app.post("/:flow(pdi)/as/interactive-authorization", interactiveAuthorizationHandler);
 app.post("/:version(v1|draft13)/as/interactive-authorization", interactiveAuthorizationHandler);
@@ -105,7 +99,6 @@ app.get("/:flow(pdi)/as/authorize", authorizeHandler);
 app.get("/:version(v1|draft13)/as/authorize", authorizeHandler);
 app.get("/:version(v1|draft13)/:flow(pdi)/as/authorize", authorizeHandler);
 
-// login form handler
 app.post("/as/login", express.urlencoded({ extended: true }), loginHandler);
 app.post("/:flow(pdi)/as/login", express.urlencoded({ extended: true }), loginHandler);
 app.post("/:version(v1|draft13)/as/login", express.urlencoded({ extended: true }), loginHandler);

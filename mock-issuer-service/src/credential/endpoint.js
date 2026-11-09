@@ -160,7 +160,6 @@ export default async function credentialEndpoint(req, res) {
     proofJwt = body.proof.jwt;
   }
 
-  // Get the holder key from the proof JWT protected header "kid".
   let holderKey;
   let photoIdPublicKey;
   const isPhotoId = isV1
