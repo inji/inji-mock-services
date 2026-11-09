@@ -18,6 +18,8 @@ import {
   issuerSigningKey,
 } from "./issuer-signing-key.js";
 import { createMdoc } from "./mdoc.js";
+import { PHOTO_ID_DOCTYPE, photoIdClaims, photoIdHolderKey } from "./photo-id.js";
+import { mdocSigningIdentity } from "./mdoc-signing-key.js";
 import { signLdpVc } from "./ldp-vc.js";
 import { envTestError, sendTestError } from "../test-errors.js";
 
@@ -30,6 +32,7 @@ const CONFIG_TO_FORMAT = {
   JwtVerifiableCredential: "jwt_vc_json",
   SdJwtVerifiableCredential: "vc+sd-jwt",
   MdocVerifiableCredential: "mso_mdoc",
+  PhotoIdVerifiableCredential: "mso_mdoc",
 };
 
 export default async function credentialEndpoint(req, res) {
@@ -157,8 +160,17 @@ export default async function credentialEndpoint(req, res) {
     proofJwt = body.proof.jwt;
   }
 
-  // Get the holder key from the proof JWT protected header "kid".
-  const holderKey = decodeProtectedHeader(proofJwt)?.kid;
+  let holderKey;
+  let photoIdPublicKey;
+  const isPhotoId = isV1
+    ? body.credential_configuration_id === "PhotoIdVerifiableCredential"
+    : format === "mso_mdoc" && body.doctype === PHOTO_ID_DOCTYPE;
+  try {
+    holderKey = decodeProtectedHeader(proofJwt)?.kid;
+    if (isPhotoId) photoIdPublicKey = await photoIdHolderKey(proofJwt);
+  } catch (error) {
+    return res.status(400).json({ error: "invalid_proof", error_description: error.message });
+  }
 
   let credential;
 
@@ -177,6 +189,15 @@ export default async function credentialEndpoint(req, res) {
         unsignedVc.issuanceDate = new Date().toISOString();
 
         credential = await signLdpVc(unsignedVc, issuerDid);
+    } else if (isPhotoId) {
+        const identity = await mdocSigningIdentity();
+        credential = (await createMdoc(
+          identity.privateKeyJwk,
+          photoIdPublicKey,
+          PHOTO_ID_DOCTYPE,
+          photoIdClaims(),
+          identity.certificate,
+        )).toString('base64url');
     } else {
         const { privateKey, publicKey } = await generateKeyPair('ES256');
         const privateKeyJwk = await exportJWK(privateKey);

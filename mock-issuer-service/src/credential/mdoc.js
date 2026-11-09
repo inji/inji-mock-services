@@ -38,7 +38,7 @@ function normalizeCoseHeaderMap(header) {
   );
 }
 
-export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespaces) {
+export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespaces, issuerCertificate) {
   const issuerSigned = {
     nameSpaces: {},
     issuerAuth: null
@@ -91,7 +91,6 @@ export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespace
 
   const msoCbor = standardCbor.encode(new cbor.Tag(standardCbor.encode(mso), 24));
   
-  // Sign MSO with COSE
   const signer = {
     key: {
       d: Buffer.from(privateKeyJwk.d, 'base64url'),
@@ -100,13 +99,9 @@ export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespace
     }
   };
   
-  // For COSE_Sign1:
-  // headers.p contains protected headers
-  // headers.u contains unprotected headers
-  // signers is a single signer object
   const headers = {
     p: { alg: 'ES256' },
-    u: { kid: privateKeyJwk.kid }
+    u: issuerCertificate ? { x5chain: issuerCertificate } : { kid: privateKeyJwk.kid }
   };
   
   try {
@@ -114,13 +109,10 @@ export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespace
     // If signers is NOT an array, it creates a COSE_Sign1.
     const signature = await cose.sign.create(headers, msoCbor, signer);
     const decodedSignature = cbor.decode(signature);
-    if (decodedSignature?.tag === 18) {
-      const sign1 = decodedSignature.value;
-      sign1[1] = normalizeCoseHeaderMap(sign1[1]);
-      issuerSigned.issuerAuth = standardCbor.encode(sign1);
-    } else {
-      issuerSigned.issuerAuth = signature;
-    }
+    const sign1 = decodedSignature?.tag === 18 ? decodedSignature.value : decodedSignature;
+    sign1[1] = normalizeCoseHeaderMap(sign1[1]);
+    // issuerAuth is a COSE_Sign1 array, not a byte string containing another encoding.
+    issuerSigned.issuerAuth = sign1;
   } catch (err) {
     console.error("COSE signing failed:", err);
     throw err;
