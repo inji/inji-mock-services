@@ -565,6 +565,8 @@ Photo IDs then require the new root. This is test-only issuer material.
 Run `npm test` to check both metadata/offer versions, wallet holder binding,
 issuer certificate/signature, every MSO claim digest, and the original mDL response.
 
-The sample portrait `assets/erika-mustermann.jpg` is from OWF Multipaz:
-https://github.com/openwallet-foundation/multipaz/blob/main/multipaz-facenet-test-data/testfaces/erika_mustermann.jpg
-Its Apache-2.0 license is included as `assets/LICENSE-multipaz`.
+The sample portrait `assets/erika-mustermann.jpg` is copied from OWF Multipaz's
+Erika Mustermann 2010 test fixture. Multipaz's image-specific provenance and the
+original Wikimedia Commons source identify it as public domain under German law.
+See [portrait provenance](assets/erika-mustermann.PROVENANCE.md) for the original
+source, attribution, pinned upstream references, and file checksum.

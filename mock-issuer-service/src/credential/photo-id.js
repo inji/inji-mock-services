@@ -5,7 +5,7 @@ import { decodeProtectedHeader, importJWK, jwtVerify } from 'jose';
 export const PHOTO_ID_DOCTYPE = 'org.iso.23220.photoid.1';
 export const PHOTO_ID_NAMESPACE = 'org.iso.23220.1';
 
-// Public sample portrait, distributed by OWF Multipaz under Apache-2.0.
+// Public-domain sample portrait; source details are in assets/erika-mustermann.PROVENANCE.md.
 const portrait = readFileSync(new URL('../../assets/erika-mustermann.jpg', import.meta.url));
 
 export async function photoIdHolderKey(proofJwt) {
