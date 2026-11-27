@@ -46,6 +46,7 @@ export default function loginHandler(req, res) {
     nonce: nonce || null,
     created_at: Date.now(),
     testError: issuerStateEntry?.testError || null,
+    mdocStatus: issuerStateEntry?.mdocStatus || null,
   });
   console.log(
     `Auth code issued for client_id=${client_id}${dpop_jkt ? ` (dpop_jkt bound: ${dpop_jkt})` : " (no dpop_jkt)"}`,

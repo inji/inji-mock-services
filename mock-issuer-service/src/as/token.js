@@ -45,6 +45,7 @@ export default async function tokenHandler(req, res) {
   console.log("Token Request:", grant_type, code || preAuthorizedCode);
 
   let scope;
+  let mdocStatus = null;
   let boundDpopJkt = null; // RFC 9449 §10: set if dpop_jkt was bound at authorization
   let testError = envTestError("token") || stageTestErrorStore.get("token") || null;
   let credentialTestError =
@@ -80,6 +81,7 @@ export default async function tokenHandler(req, res) {
     }
 
     scope = entry.scope;
+    mdocStatus = entry.mdocStatus || null;
     testError ||= entry.testError?.stage === "token" ? entry.testError : null;
     credentialTestError ||= entry.testError?.stage === "credential" ? entry.testError : null;
 
@@ -126,6 +128,7 @@ export default async function tokenHandler(req, res) {
       }
     }
     scope = entry.scope;
+    mdocStatus = entry.mdocStatus || null;
     testError ||= entry.testError?.stage === "token" ? entry.testError : null;
     credentialTestError ||= entry.testError?.stage === "credential" ? entry.testError : null;
     // NOTE: deferred delete — see comment on authCodeStore above.
@@ -231,6 +234,7 @@ export default async function tokenHandler(req, res) {
     tokenType,
     dpopThumbprint,   // null for Bearer tokens
     testError: credentialTestError,
+    mdocStatus,
   });
   if (credentialTestError) stageTestErrorStore.delete("credential");
 

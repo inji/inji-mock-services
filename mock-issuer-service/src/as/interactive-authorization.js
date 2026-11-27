@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { iarSessions } from "./iar-store.js";
-import { authCodeStore } from "./authz-store.js";
+import { authCodeStore, issuerStateStore } from "./authz-store.js";
 import { authServerBaseUrl, issuerBaseUrl, resolveRequestVersion } from "../issuer-profile.js";
 import { verifierConfig } from "./verifier-config.js";
 
@@ -112,6 +112,7 @@ export default async function interactiveAuthorizationHandler(req, res) {
       redirect_uri: session.redirect_uri,
       scope: "openid",
       created_at: Date.now(),
+      mdocStatus: session.mdocStatus || null,
     });
 
     // Clean session
@@ -138,12 +139,14 @@ export default async function interactiveAuthorizationHandler(req, res) {
   } = req.body;
 
   const sessionId = randomSession();
+  const issuerStateEntry = issuer_state ? issuerStateStore.get(issuer_state) : null;
 
   iarSessions.set(sessionId, {
     client_id,
     redirect_uri,
     state,
     issuer_state,
+    mdocStatus: issuerStateEntry?.mdocStatus || null,
     authorization_details,
     pd: verifierConfig.presentationDefinition,
     dcqlQuery: verifierConfig.dcqlQuery,

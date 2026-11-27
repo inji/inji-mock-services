@@ -12,6 +12,7 @@ import authorizeHandler from "./as/authorize.js";
 import interactiveAuthorizationHandler from "./as/interactive-authorization.js";
 import tokenHandler from "./as/token.js";
 import credentialHandler from "./credential/endpoint.js";
+import { statusListHandler } from "./credential/status-list.js";
 import loginHandler from "./as/login.js";
 import parHandler from "./as/par.js";
 import nonceHandler from "./nonce.js";
@@ -103,6 +104,9 @@ app.post("/as/login", express.urlencoded({ extended: true }), loginHandler);
 app.post("/:flow(pdi)/as/login", express.urlencoded({ extended: true }), loginHandler);
 app.post("/:version(v1|draft13)/as/login", express.urlencoded({ extended: true }), loginHandler);
 app.post("/:version(v1|draft13)/:flow(pdi)/as/login", express.urlencoded({ extended: true }), loginHandler);
+
+// ---- MDOC STATUS LIST (Token Status List CWT) ---- //
+app.get("/statuslists/:id", statusListHandler);
 
 // ---- CREDENTIAL ENDPOINT ---- //
 app.post("/credential", credentialHandler);

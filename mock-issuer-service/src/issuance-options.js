@@ -1,4 +1,5 @@
 import { TEST_ERROR_STAGES } from "./test-errors.js";
+import { MDOC_STATUS_OPTIONS } from "./credential/status-list.js";
 
 const FLOW_OPTIONS = new Set(["normal", "pdi", "pre-auth", "pre-auth-tx"]);
 const VERSION_OPTIONS = new Set(["v1", "draft13"]);
@@ -43,7 +44,7 @@ const CREDENTIAL_MAP = {
     format: "mso_mdoc",
     label: "Mobile Driving License",
     scope: "mdoc.read",
-    description: "ISO 18013-5 Mobile Driving License (mDL) as mdoc.",
+    description: "ISO 18013-5 Mobile Driving License (mDL) with a status list.",
   },
   "photo-id": {
     configurationId: "PhotoIdVerifiableCredential",
@@ -69,13 +70,16 @@ export function resolveIssuanceOptions(query = {}) {
   const specVersion = SPEC_VERSION_OPTIONS.has(query.specVersion) ? query.specVersion : "draft-23"
   const requestMode = REQUEST_MODE_OPTIONS.has(query.requestMode) ? query.requestMode : "by_reference"
   const signedRequest = query.signedRequest ? query.signedRequest === "true" : true
+  const mdocStatus = MDOC_STATUS_OPTIONS.has(query.mdocStatus) ? query.mdocStatus : "valid";
+  const credentialDetails = { ...CREDENTIAL_MAP[credential] };
   const hasTestErrorCode = Object.prototype.hasOwnProperty.call(query, "test_error_code");
 
   return {
     flow,
     version,
     credential,
-    credentialDetails: CREDENTIAL_MAP[credential],
+    mdocStatus,
+    credentialDetails,
     responseMode,
     clientIdPrefix,
     specVersion,
@@ -96,6 +100,9 @@ export function buildOfferUrl(issuer, options) {
     version: options.version,
     credential: options.credential,
   });
+  if (options.credential === "mdoc") {
+    params.set("mdocStatus", options.mdocStatus);
+  }
   if (options.testErrorStage) params.set("test_error_stage", options.testErrorStage);
   if (options.testErrorCode !== null) params.set("test_error_code", options.testErrorCode);
   if (options.testErrorStatus) params.set("test_error_status", options.testErrorStatus);

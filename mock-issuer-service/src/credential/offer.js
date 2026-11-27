@@ -46,9 +46,12 @@ export default function credentialOfferHandler(req, res) {
     }
   }
 
-  if (testError) {
-    issuerStateStore.set(issuerState, { testError });
-    stageTestErrorStore.set(testError.stage, testError);
+  if (testError || options.credential === "mdoc") {
+    issuerStateStore.set(issuerState, {
+      testError: testError || null,
+      mdocStatus: options.credential === "mdoc" ? options.mdocStatus : null,
+    });
+    if (testError) stageTestErrorStore.set(testError.stage, testError);
   }
 
   let grantResponse = {};
@@ -87,6 +90,7 @@ export default function credentialOfferHandler(req, res) {
       configurationId: options.credentialDetails.configurationId,
       scope: options.credentialDetails.scope,
       testError,
+      mdocStatus: options.credential === "mdoc" ? options.mdocStatus : null,
     });
 
     grantResponse = {
