@@ -85,6 +85,9 @@ function renderPage(options, pin = null, configError = null, jsonFieldText = {})
     version: options.version,
     credential: options.credential
   });
+  if (options.credential === "mdoc") {
+    queryParams.set("mdocStatus", options.mdocStatus);
+  }
   if (options.testErrorStage) queryParams.set("test_error_stage", options.testErrorStage);
   if (options.testErrorCode !== null) {
     queryParams.set("test_error_code", options.testErrorCode);
@@ -606,6 +609,18 @@ function renderPage(options, pin = null, configError = null, jsonFieldText = {})
                 ${optionButton("credential", "photo-id", options.credential, "Photo ID", "Photo ID mdoc")}
               </div>
             </div>
+
+            ${options.credential === "mdoc" ? `
+            <div class="control-group">
+              <h2>mDL status</h2>
+              <div class="toggle-grid">
+                ${optionButton("mdocStatus", "valid", options.mdocStatus, "Valid", "Index 0. Status value 0.")}
+                ${optionButton("mdocStatus", "revoked", options.mdocStatus, "Revoked", "Index 1. Status value 1.")}
+                ${optionButton("mdocStatus", "suspended", options.mdocStatus, "Suspended", "Index 2. Status value 2.")}
+                ${optionButton("mdocStatus", "expired", options.mdocStatus, "Expired", "mDL validity expired; status list index 3 stays VALID.")}
+              </div>
+            </div>
+            ` : ""}
           </form>
         </div>
 
@@ -631,6 +646,12 @@ function renderPage(options, pin = null, configError = null, jsonFieldText = {})
               <strong>Credential profile</strong>
               <code>${escapeHtml(options.credentialDetails.configurationId)} | ${escapeHtml(options.credentialDetails.format)}</code>
             </li>
+            ${options.credential === "mdoc" ? `
+            <li>
+              <strong>Status list</strong>
+              <code>${escapeHtml(options.mdocStatus === "expired" ? "document expired; status list index 3 is VALID" : options.mdocStatus)} at ${escapeHtml(ISSUER)}/statuslists/1</code>
+            </li>
+            ` : ""}
           </ul>
           <div class="actions">
             <a class="button-link primary" href="${escapeHtml(qrData)}">Open in Wallet</a>

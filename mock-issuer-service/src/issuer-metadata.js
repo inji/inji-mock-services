@@ -8,26 +8,6 @@ import {
 import { PHOTO_ID_DOCTYPE, photoIdClaims } from "./credential/photo-id.js";
 
 const BASE_CREDENTIAL_CONFIGURATIONS = {
-  PhotoIdVerifiableCredential: {
-    format: "mso_mdoc",
-    scope: "photoid.read",
-    doctype: PHOTO_ID_DOCTYPE,
-    cryptographic_binding_methods_supported: ["jwk"],
-    credential_signing_alg_values_supported: ["ES256"],
-    proof_types_supported: { jwt: { proof_signing_alg_values_supported: ["ES256"] } },
-    credential_metadata: {
-      display: [{ name: "Photo ID", locale: "en", logo: {
-        uri: "https://inji.github.io/inji-config/logos/mosipid-logo.png",
-        alt_text: "MOSIP logo",
-      } }],
-      claims: Object.entries(photoIdClaims()).flatMap(([namespace, claims]) =>
-        Object.keys(claims).map(name => ({
-          path: [namespace, name],
-          display: [{ name: name.replaceAll("_", " "), locale: "en" }],
-        })),
-      ),
-    },
-  },
   FarmerCredential: {
     format: "ldp_vc",
     scope: "degree.read",
@@ -147,7 +127,6 @@ const BASE_CREDENTIAL_CONFIGURATIONS = {
           alt_text: "a square logo of a MOSIP"
         } },
       ],
-
       claims: [
         {
           path: ["credentialSubject", "employeeId"],
@@ -227,20 +206,50 @@ const BASE_CREDENTIAL_CONFIGURATIONS = {
       ],
     },
   },
-  MdocVerifiableCredential: {
+  ...mdocConfigurations(),
+  PhotoIdVerifiableCredential: {
+    format: "mso_mdoc",
+    scope: "photoid.read",
+    doctype: PHOTO_ID_DOCTYPE,
+    cryptographic_binding_methods_supported: ["jwk"],
+    credential_signing_alg_values_supported: ["ES256"],
+    proof_types_supported: { jwt: { proof_signing_alg_values_supported: ["ES256"] } },
+    credential_metadata: {
+      display: [{ name: "Photo ID", locale: "en", logo: {
+        uri: "https://inji.github.io/inji-config/logos/mosipid-logo.png",
+        alt_text: "MOSIP logo",
+      } }],
+      claims: Object.entries(photoIdClaims()).flatMap(([namespace, claims]) =>
+        Object.keys(claims).map(name => ({
+          path: [namespace, name],
+          display: [{ name: name.replaceAll("_", " "), locale: "en" }],
+        })),
+      ),
+    },
+  },
+};
+
+function mdocConfiguration(displayName) {
+  return {
     format: "mso_mdoc",
     scope: "mdoc.read",
     cryptographic_binding_methods_supported: ["jwk"],
     credential_signing_alg_values_supported: ["ES256"],
+    proof_types_supported: {
+      jwt: {
+        proof_signing_alg_values_supported: ["RS256", "ES256"],
+      },
+    },
     doctype: "org.iso.18013.5.1.mDL",
     credential_metadata: {
-      display: [
-        { name: "Mobile Driving License", locale: "en" ,logo: {
+      display: [{
+        name: displayName,
+        locale: "en",
+        logo: {
           uri: "https://inji.github.io/inji-config/logos/mosipid-logo.png",
-          alt_text: "a square logo of a MOSIP"
-        }},
-      ],
-
+          alt_text: "a square logo of a MOSIP",
+        },
+      }],
       claims: [
         {
           path: ["org.iso.18013.5.1", "given_name"],
@@ -252,8 +261,17 @@ const BASE_CREDENTIAL_CONFIGURATIONS = {
         },
       ],
     },
-  },
-};
+  };
+}
+
+function mdocConfigurations() {
+  return {
+    MdocVerifiableCredential: mdocConfiguration("mDL Valid"),
+    MdocRevokedVerifiableCredential: mdocConfiguration("mDL Revoked"),
+    MdocSuspendedVerifiableCredential: mdocConfiguration("mDL Suspended"),
+    MdocExpiredVerifiableCredential: mdocConfiguration("mDL Expired"),
+  };
+}
 
 function toDraft13Configuration(configuration) {
   const { credential_metadata, ...rest } = configuration;

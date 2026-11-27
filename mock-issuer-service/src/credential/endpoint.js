@@ -3,10 +3,9 @@ import {
   STATIC_JWT_VC,
   STATIC_SD_JWT_VC,
   STATIC_MDL_MDOC,
-  STATIC_MDL_MDOC_SAMPLE_B64URL,
 } from "./static-vc.js";
 import { SignJWT, generateKeyPair, exportJWK, decodeProtectedHeader, decodeJwt } from 'jose';
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { ISSUER } from "../issuer-metadata.js";
 import { accessTokenStore, stageTestErrorStore } from "../as/authz-store.js";
 import { verifyDPoPProof, buildHtu, DPoPError } from "../as/dpop.js";
@@ -19,7 +18,7 @@ import {
 } from "./issuer-signing-key.js";
 import { createMdoc } from "./mdoc.js";
 import { PHOTO_ID_DOCTYPE, photoIdClaims, photoIdHolderKey } from "./photo-id.js";
-import { mdocSigningIdentity } from "./mdoc-signing-key.js";
+import { resolveIssuedMdocStatus, statusListUri } from "./status-list.js";
 import { signLdpVc } from "./ldp-vc.js";
 import { envTestError, sendTestError } from "../test-errors.js";
 
@@ -32,6 +31,9 @@ const CONFIG_TO_FORMAT = {
   JwtVerifiableCredential: "jwt_vc_json",
   SdJwtVerifiableCredential: "vc+sd-jwt",
   MdocVerifiableCredential: "mso_mdoc",
+  MdocRevokedVerifiableCredential: "mso_mdoc",
+  MdocSuspendedVerifiableCredential: "mso_mdoc",
+  MdocExpiredVerifiableCredential: "mso_mdoc",
   PhotoIdVerifiableCredential: "mso_mdoc",
 };
 
@@ -110,9 +112,10 @@ export default async function credentialEndpoint(req, res) {
 
   let format;
   let proofJwt;
+  let configId;
 
   if (isV1) {
-    const configId = body.credential_configuration_id;
+    configId = body.credential_configuration_id;
     format = CONFIG_TO_FORMAT[configId];
     if (!format) {
       return res.status(400).json({
@@ -123,7 +126,7 @@ export default async function credentialEndpoint(req, res) {
 
     const jwtProofs = body.proofs && body.proofs.jwt;
     const mdocProofs = body.proofs && body.proofs.mso_mdoc;
-    
+
     if (format === "mso_mdoc") {
         if (!mdocProofs || !Array.isArray(mdocProofs) || mdocProofs.length === 0) {
           // Fallback to jwt if mdoc proofs missing but jwt present (some wallets might still use jwt proof for mdoc)
@@ -163,7 +166,7 @@ export default async function credentialEndpoint(req, res) {
   let holderKey;
   let photoIdPublicKey;
   const isPhotoId = isV1
-    ? body.credential_configuration_id === "PhotoIdVerifiableCredential"
+    ? configId === "PhotoIdVerifiableCredential"
     : format === "mso_mdoc" && body.doctype === PHOTO_ID_DOCTYPE;
   try {
     holderKey = decodeProtectedHeader(proofJwt)?.kid;
@@ -183,21 +186,19 @@ export default async function credentialEndpoint(req, res) {
             host = "mock-issuer.local";
         }
         const issuerDid = `did:web:${host}`;
-        
+
         const { proof, ...unsignedVc } = STATIC_LDP_VC;
         unsignedVc.issuer = issuerDid;
         unsignedVc.issuanceDate = new Date().toISOString();
 
         credential = await signLdpVc(unsignedVc, issuerDid);
     } else if (isPhotoId) {
-        const identity = await mdocSigningIdentity();
-        credential = (await createMdoc(
-          identity.privateKeyJwk,
-          photoIdPublicKey,
-          PHOTO_ID_DOCTYPE,
-          photoIdClaims(),
-          identity.certificate,
-        )).toString('base64url');
+        const mdoc = createMdoc({
+          devicePublicKeyJwk: photoIdPublicKey,
+          docType: PHOTO_ID_DOCTYPE,
+          namespaces: photoIdClaims(),
+        });
+        credential = Buffer.from(mdoc).toString("base64url");
     } else {
         const { privateKey, publicKey } = await generateKeyPair('ES256');
         const privateKeyJwk = await exportJWK(privateKey);
@@ -260,7 +261,55 @@ export default async function credentialEndpoint(req, res) {
             credential = await createSdJwt({...STATIC_SD_JWT_VC, ...holderCnfInfo}, privateKey, didJwk, didJwk);
           }
         } else if (format === "mso_mdoc") {
-            credential = STATIC_MDL_MDOC_SAMPLE_B64URL;
+          const profile = resolveIssuedMdocStatus(configId, tokenEntry?.mdocStatus);
+          const listUri = statusListUri(profile.listId);
+          let devicePublicKeyJwk = publicKeyJwk;
+          try {
+            devicePublicKeyJwk = await photoIdHolderKey(proofJwt);
+          } catch (_) {
+            // Fall back to a generated device key when the proof has no holder JWK.
+          }
+          const now = new Date();
+          const validity = profile.credentialExpired
+            ? {
+                signed: new Date(now.getTime() - 400 * 24 * 60 * 60 * 1000),
+                validFrom: new Date(now.getTime() - 400 * 24 * 60 * 60 * 1000),
+                validUntil: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+              }
+            : {
+                signed: now,
+                validFrom: now,
+                validUntil: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000),
+              };
+          const mdoc = createMdoc({
+            devicePublicKeyJwk,
+            docType: "org.iso.18013.5.1.mDL",
+            namespaces: {
+              "org.iso.18013.5.1": {
+                ...STATIC_MDL_MDOC["org.iso.18013.5.1"],
+                given_name: profile.givenName,
+                family_name: "mDL",
+                document_number: profile.documentNumber,
+                issuing_country: "IN",
+                issuing_authority: "Mock Issuer",
+                issue_date: validity.signed.toISOString().slice(0, 10),
+                expiry_date: validity.validUntil.toISOString().slice(0, 10),
+                driving_privileges: [
+                  {
+                    vehicle_category_code: "A",
+                    issue_date: validity.signed.toISOString().slice(0, 10),
+                    expiry_date: validity.validUntil.toISOString().slice(0, 10),
+                  },
+                ],
+              },
+            },
+            validity,
+            statusList: {
+              idx: profile.idx,
+              uri: listUri,
+            },
+          });
+          credential = Buffer.from(mdoc).toString("base64url");
         }
     }
   } catch (error) {

@@ -1,19 +1,16 @@
 import * as cbor from 'cbor-x';
-import * as cose from 'cose-js';
 import { createHash, randomBytes } from 'node:crypto';
-
-const standardCbor = new cbor.Encoder({
-  useRecords: false,
-  useTag259ForMaps: false,
-  variableMapSize: true,
-});
+import { encodeCbor, signCoseSign1 } from './cose-sign.js';
+import { getIssuerCredential } from './issuer-cert.js';
 
 function sha256(data) {
   return createHash('sha256').update(data).digest();
 }
 
 function taggedDateTime(date) {
-  return new cbor.Tag(date.toISOString(), 0);
+  // mDL validity times use whole seconds only (e.g. 2024-01-01T00:00:00Z), not milliseconds.
+  const text = date.toISOString().replace(/\.\d{3}Z$/, "Z");
+  return new cbor.Tag(text, 0);
 }
 
 function toCoseKey(publicKeyJwk) {
@@ -25,20 +22,7 @@ function toCoseKey(publicKeyJwk) {
   ]);
 }
 
-function normalizeCoseHeaderMap(header) {
-  if (!header || header instanceof Map) {
-    return header;
-  }
-
-  return new Map(
-    Object.entries(header).map(([key, value]) => {
-      const numericKey = Number(key);
-      return [Number.isNaN(numericKey) ? key : numericKey, value];
-    }),
-  );
-}
-
-export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespaces, issuerCertificate) {
+export function createMdoc({ devicePublicKeyJwk, docType, namespaces, statusList, validity }) {
   const issuerSigned = {
     nameSpaces: {},
     issuerAuth: null
@@ -63,65 +47,60 @@ export async function createMdoc(privateKeyJwk, publicKeyJwk, docType, namespace
         elementValue: nsClaims[claim]
       };
       
-      const encodedItem = standardCbor.encode(item);
+      const encodedItem = encodeCbor(item);
       const taggedItem = new cbor.Tag(encodedItem, 24);
       issuerSigned.nameSpaces[ns].push(taggedItem);
-      
-      const digest = sha256(standardCbor.encode(taggedItem));
+
+      const digest = sha256(encodeCbor(taggedItem));
       valueDigests[ns].set(digestId, digest);
       
       digestId++;
     }
   }
 
+  const signedAt = validity?.signed ? new Date(validity.signed) : new Date();
+  const validFrom = validity?.validFrom ? new Date(validity.validFrom) : signedAt;
+  const validUntil = validity?.validUntil
+    ? new Date(validity.validUntil)
+    : new Date(signedAt.getTime() + 365 * 24 * 60 * 60 * 1000);
+
   const mso = {
     version: "1.0",
     digestAlgorithm: "SHA-256",
     valueDigests: valueDigests,
     deviceKeyInfo: {
-      deviceKey: toCoseKey(publicKeyJwk)
+      deviceKey: toCoseKey(devicePublicKeyJwk)
     },
     docType: docType,
     validityInfo: {
-      signed: taggedDateTime(new Date()),
-      validFrom: taggedDateTime(new Date()),
-      validUntil: taggedDateTime(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000))
+      signed: taggedDateTime(signedAt),
+      validFrom: taggedDateTime(validFrom),
+      validUntil: taggedDateTime(validUntil)
     }
   };
 
-  const msoCbor = standardCbor.encode(new cbor.Tag(standardCbor.encode(mso), 24));
-  
-  const signer = {
-    key: {
-      d: Buffer.from(privateKeyJwk.d, 'base64url'),
-      x: Buffer.from(privateKeyJwk.x, 'base64url'),
-      y: Buffer.from(privateKeyJwk.y, 'base64url')
-    }
-  };
-  
-  const headers = {
-    p: { alg: 'ES256' },
-    u: issuerCertificate ? { x5chain: issuerCertificate } : { kid: privateKeyJwk.kid }
-  };
-  
-  try {
-    // In cose-js 0.9.0, exports.create(headers, payload, signers, options)
-    // If signers is NOT an array, it creates a COSE_Sign1.
-    const signature = await cose.sign.create(headers, msoCbor, signer);
-    const decodedSignature = cbor.decode(signature);
-    const sign1 = decodedSignature?.tag === 18 ? decodedSignature.value : decodedSignature;
-    sign1[1] = normalizeCoseHeaderMap(sign1[1]);
-    // issuerAuth is a COSE_Sign1 array, not a byte string containing another encoding.
-    issuerSigned.issuerAuth = sign1;
-  } catch (err) {
-    console.error("COSE signing failed:", err);
-    throw err;
+  if (statusList) {
+    mso.status = {
+      status_list: {
+        idx: statusList.idx,
+        uri: statusList.uri,
+      },
+    };
   }
 
-  const mdoc = {
+  const { privateKey, certificateDer } = getIssuerCredential();
+  const msoBytes = encodeCbor(mso);
+  // issuerAuth is an untagged COSE_Sign1 array. x5chain (33) is a single
+  // certificate byte string in the unprotected header.
+  issuerSigned.issuerAuth = signCoseSign1({
+    protectedHeader: new Map([[1, -7]]),
+    unprotectedHeader: new Map([[33, certificateDer]]),
+    payload: encodeCbor(new cbor.Tag(msoBytes, 24)),
+    privateKey,
+  });
+
+  return encodeCbor({
     docType: docType,
     issuerSigned: issuerSigned
-  };
-
-  return standardCbor.encode(mdoc);
+  });
 }

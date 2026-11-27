@@ -84,7 +84,9 @@ export const STATIC_MDL_MDOC = {
     "expiry_date": "2033-01-01",
     "issuing_country": "IN",
     "issuing_authority": "Ministry of Transport",
-    "document_number": "ABC123456"
+    "document_number": "ABC123456",
+    "portrait": Buffer.from([0xff, 0xd8, 0xff, 0xd9]),
+    "un_distinguishing_sign": "IND"
   }
 };
 
